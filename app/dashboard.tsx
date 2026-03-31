@@ -9,6 +9,7 @@ import {
   comprehensionPercent,
   type ProgressCounts,
 } from '@/lib/progress';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
 
 function formatNum(n: number): string {
@@ -27,7 +28,9 @@ type SurahProgressRow = {
 export default function ProfileScreen() {
   const router = useRouter();
 
-  const overall = useMemo(() => getOverallProgress(), []);
+  const statusVersion = useWordStatusVersion();
+
+  const overall = useMemo(() => getOverallProgress(), [statusVersion]);
   const overallPct = comprehensionPercent(overall);
 
   const surahRows = useMemo(() => {
@@ -46,7 +49,7 @@ export default function ProfileScreen() {
     // Sort by % descending, then by surah id
     rows.sort((a, b) => b.pct - a.pct || a.id - b.id);
     return rows;
-  }, []);
+  }, [statusVersion]);
 
   return (
     <ScrollView

@@ -3,6 +3,7 @@ import { View, Text, Pressable, SectionList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getChapters, getJuzList } from '@/lib/quran-data';
 import { getSurahProgress } from '@/lib/progress';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
 import type { Chapter } from '@/types/quran';
 
@@ -109,6 +110,7 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
 }
 
 export default function SurahList() {
+  useWordStatusVersion(); // re-render all rows when any word status changes
   return (
     <SectionList
       sections={sections}
