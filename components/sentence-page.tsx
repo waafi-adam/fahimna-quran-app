@@ -7,7 +7,11 @@ import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
+import { useStorage } from '@/hooks/use-storage';
 import { useTheme } from '@/lib/theme';
+import type { AudioState } from '@/lib/audio-player';
+import AyahPlayButtons from '@/components/ayah-play-buttons';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
 
@@ -44,7 +48,7 @@ type Props = {
 };
 
 /** Render inline Arabic words with per-word tap handling */
-function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: ReaderMode; pageNumber: number; router: ReturnType<typeof useRouter>; }) {
+function AyahText({ words, mode, pageNumber, router, isPlayingAyah, audio }: { words: Word[]; mode: ReaderMode; pageNumber: number; router: ReturnType<typeof useRouter>; isPlayingAyah: boolean; audio: AudioState; }) {
   const { colors } = useTheme();
 
   const STATUS_COLOR: Record<string, string | undefined> = {
@@ -56,7 +60,9 @@ function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: Re
   return (
     <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, lineHeight: 48, textAlign: 'right', writingDirection: 'rtl' }}>
       {words.map((word) => {
+        const isActiveWord = isPlayingAyah && audio.activeWordPos === word.w;
         const bg = mode === 'learning' ? STATUS_COLOR[getWordStatus(word)] : undefined;
+        const textColor = isActiveWord ? colors.audioWordText : undefined;
         return (
           <Text
             key={word.id}
@@ -67,7 +73,7 @@ function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: Re
                 router.push(`/word-sheet?page=${pageNumber}&surah=${word.s}&verse=${word.v}&word=${word.w}&mode=${mode}`);
               }
             }}
-            style={bg ? { backgroundColor: bg, borderRadius: 4 } : undefined}
+            style={bg || textColor ? { backgroundColor: bg, borderRadius: 4, color: textColor } : undefined}
           >
             {word.a}{' '}
           </Text>
@@ -81,6 +87,8 @@ export default function SentencePage({ page, mode, language, bottomPadding, page
   useWordStatusVersion();
   const router = useRouter();
   const { colors } = useTheme();
+  const audio = useAudioPlayer();
+  const [reciter] = useStorage('reciter', 'husary-murattal');
   const sections = getPageSections(page);
 
   // Pre-load translations
@@ -108,10 +116,19 @@ export default function SentencePage({ page, mode, language, bottomPadding, page
         }
 
         const transText = translationCache.get(section.surah)?.get(section.verse) ?? '';
+        const isPlayingAyah = audio.status === 'playing' && audio.surah === section.surah && audio.ayah === section.verse;
 
         return (
-          <View key={`${section.surah}:${section.verse}`}>
-            <AyahText words={section.words} mode={mode} pageNumber={pageNumber} router={router} />
+          <View
+            key={`${section.surah}:${section.verse}`}
+            style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
+          >
+            <AyahText words={section.words} mode={mode} pageNumber={pageNumber} router={router} isPlayingAyah={isPlayingAyah} audio={audio} />
+
+            {/* Play controls */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
+            </View>
 
             {transText.length > 0 && (
               <SentenceTranslation text={transText} mode={mode} />

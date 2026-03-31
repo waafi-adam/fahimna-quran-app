@@ -4,6 +4,7 @@ import type { PageData, AyahLine, ReaderMode, Word } from '@/types/quran';
 import { getChapter } from '@/lib/quran-data';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { useTheme } from '@/lib/theme';
 
 const BISMILLAH_TEXT = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
@@ -18,6 +19,7 @@ type Props = {
 export default function MushafPage({ page, mode, contentHeight, onWordPress }: Props) {
   useWordStatusVersion();
   const { colors } = useTheme();
+  const audio = useAudioPlayer();
 
   const STATUS_COLOR: Record<string, string | undefined> = {
     new: colors.statusNewBg,
@@ -46,7 +48,9 @@ export default function MushafPage({ page, mode, contentHeight, onWordPress }: P
         }}
       >
         {words.map((word, idx) => {
+          const isActiveWord = audio.status === 'playing' && audio.surah === word.s && audio.ayah === word.v && audio.activeWordPos === word.w;
           const bg = mode === 'learning' ? STATUS_COLOR[getWordStatus(word)] : undefined;
+          const textColor = isActiveWord ? colors.audioWordText : undefined;
           return (
             <Text
               key={word.id}
@@ -54,6 +58,7 @@ export default function MushafPage({ page, mode, contentHeight, onWordPress }: P
               style={{
                 backgroundColor: bg,
                 borderRadius: bg ? 4 : undefined,
+                color: textColor,
               }}
             >
               {idx > 0 ? ' ' : ''}{word.a}

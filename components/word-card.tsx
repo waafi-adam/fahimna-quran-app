@@ -11,9 +11,10 @@ type Props = {
   mode: ReaderMode;
   language: Language;
   onPress?: () => void;
+  isActiveWord?: boolean;
 };
 
-function WordCard({ word, status, mode, language, onPress }: Props) {
+function WordCard({ word, status, mode, language, onPress, isActiveWord }: Props) {
   const { colors } = useTheme();
 
   const STATUS_BG: Record<WordStatus, string | undefined> = {
@@ -36,7 +37,6 @@ function WordCard({ word, status, mode, language, onPress }: Props) {
   const showBg = mode === 'learning' && status !== 'known';
   const showMeaning = mode === 'reading' || (mode === 'learning' && status !== 'known');
   const meaningOpacity = mode === 'learning' && status === 'learning' ? 0.4 : 1;
-
   return (
     <Pressable
       onPress={onPress}
@@ -54,7 +54,7 @@ function WordCard({ word, status, mode, language, onPress }: Props) {
         style={{
           fontFamily: 'UthmanicHafs',
           fontSize: 22,
-          color: colors.text,
+          color: isActiveWord ? colors.audioWordText : colors.text,
           textAlign: 'center',
         }}
       >

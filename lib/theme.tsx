@@ -68,6 +68,10 @@ const light = {
   // Pressed state
   pressed: '#F3F4F6',
 
+  // Audio highlight
+  audioAyahBg: '#EFF6FF',
+  audioWordText: '#DC2626',
+
   // Navigation bar
   headerBg: '#fff',
   headerText: '#111827',
@@ -133,6 +137,10 @@ const dark: Colors = {
 
   // Pressed state
   pressed: '#262626',
+
+  // Audio highlight
+  audioAyahBg: '#1E293B',
+  audioWordText: '#F87171',
 
   // Navigation bar
   headerBg: '#0F0F0F',

@@ -1,5 +1,5 @@
 import type { PageData, AyahLine, Word, Language } from '@/types/quran';
-import { getChapter } from '@/lib/quran-data';
+import { getChapter, getPage } from '@/lib/quran-data';
 
 // === Section types for WBW / Sentence layouts ===
 
@@ -65,6 +65,22 @@ export function getWordMeaning(word: Word, lang: Language): string {
     case 'id': return word.mi;
     case 'ur': return word.mu;
   }
+}
+
+/** Find which page (1-604) contains a given surah:ayah */
+export function getAyahPage(surah: number, ayah: number): number {
+  const chapter = getChapter(surah);
+  if (!chapter) return 1;
+  for (let p = chapter.startPage; p <= 604; p++) {
+    const page = getPage(p);
+    for (const line of page.lines) {
+      if (line.type !== 'ayah') continue;
+      for (const word of line.words) {
+        if (word.s === surah && word.v === ayah) return p;
+      }
+    }
+  }
+  return chapter.startPage;
 }
 
 /** Get all words on a page (flattened from ayah lines) */

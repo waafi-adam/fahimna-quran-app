@@ -44,7 +44,7 @@ function ThemedStack() {
           name="ayah-sheet"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.35, 0.65],
+            sheetAllowedDetents: [0.55, 0.80],
             sheetGrabberVisible: true,
             headerShown: false,
           }}

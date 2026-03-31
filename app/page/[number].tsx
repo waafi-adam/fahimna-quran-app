@@ -1,13 +1,14 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, FlatList, useWindowDimensions, type ViewToken } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import type { ReaderLayout, ReaderMode, Language } from '@/types/quran';
 import { getPage, getChapter, isVerseMarker } from '@/lib/quran-data';
-import { getSurahsOnPage } from '@/lib/page-helpers';
+import { getSurahsOnPage, getAyahPage } from '@/lib/page-helpers';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
 import { useBookmarkVersion } from '@/hooks/use-bookmarks';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { isPageBookmarked, togglePageBookmark } from '@/lib/bookmarks';
 import { storage } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
@@ -39,6 +40,16 @@ export default function ReaderScreen() {
   const bookmarkVersion = useBookmarkVersion();
   const pageBookmarked = isPageBookmarked(currentPage);
   const { colors } = useTheme();
+  const audio = useAudioPlayer();
+
+  // Auto-scroll to the page of the currently playing ayah
+  useEffect(() => {
+    if (audio.status !== 'playing') return;
+    const targetPage = getAyahPage(audio.surah, audio.ayah);
+    if (targetPage !== currentPage) {
+      flatListRef.current?.scrollToIndex({ index: targetPage - 1, animated: true });
+    }
+  }, [audio.surah, audio.ayah, audio.status]);
 
   const handleWordPress = useCallback((word: Word, pageNum: number) => {
     if (isVerseMarker(word)) {

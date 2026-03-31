@@ -7,8 +7,11 @@ import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
+import { useStorage } from '@/hooks/use-storage';
 import { useTheme } from '@/lib/theme';
 import WordCard from '@/components/word-card';
+import AyahPlayButtons from '@/components/ayah-play-buttons';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
 
@@ -48,6 +51,8 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
   useWordStatusVersion();
   const router = useRouter();
   const { colors } = useTheme();
+  const audio = useAudioPlayer();
+  const [reciter] = useStorage('reciter', 'husary-murattal');
   const sections = getPageSections(page);
 
   // Pre-load translations for surahs on this page
@@ -75,9 +80,13 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
         }
 
         const transText = translationCache.get(section.surah)?.get(section.verse) ?? '';
+        const isPlayingAyah = audio.status === 'playing' && audio.surah === section.surah && audio.ayah === section.verse;
 
         return (
-          <View key={`${section.surah}:${section.verse}`}>
+          <View
+            key={`${section.surah}:${section.verse}`}
+            style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
+          >
             {/* Word cards – RTL flow */}
             <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-start' }}>
               {section.words.map((word) => (
@@ -87,6 +96,7 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
                   status={getWordStatus(word)}
                   mode={mode}
                   language={language}
+                  isActiveWord={isPlayingAyah && audio.activeWordPos === word.w}
                   onPress={
                     isVerseMarker(word)
                       ? () => router.push(`/ayah-sheet?surah=${word.s}&ayah=${word.v}`)
@@ -94,6 +104,11 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
                   }
                 />
               ))}
+            </View>
+
+            {/* Play controls */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 4 }}>
+              <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
             </View>
 
             {/* Ayah translation */}
