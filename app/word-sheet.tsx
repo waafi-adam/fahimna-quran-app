@@ -1,9 +1,11 @@
-import { View, Text, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
+import { useWordStatus } from '@/hooks/use-word-status';
 import { getPage, getRootById, getLemmaById, isVerseMarker } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
-import type { Language, Word, AyahLine } from '@/types/quran';
+import { setWordStatus } from '@/lib/word-status';
+import type { Language, Word, AyahLine, WordStatus, PropagationMode, ReaderMode } from '@/types/quran';
 
 /** Find a word by surah:verse:position on a given page */
 function findWord(pageNum: number, surah: number, verse: number, wordPos: number): Word | null {
@@ -17,22 +19,38 @@ function findWord(pageNum: number, surah: number, verse: number, wordPos: number
   return null;
 }
 
+const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
+  { key: 'new', label: 'New', bg: '#DBEAFE', border: '#93C5FD' },
+  { key: 'learning', label: 'Learning', bg: '#FEF3C7', border: '#FCD34D' },
+  { key: 'known', label: 'Known', bg: '#D1FAE5', border: '#6EE7B7' },
+];
+
 export default function WordSheet() {
-  const { page, surah, verse, word: wordPos } = useLocalSearchParams<{
+  const { page, surah, verse, word: wordPos, mode } = useLocalSearchParams<{
     page: string;
     surah: string;
     verse: string;
     word: string;
+    mode: string;
   }>();
 
+  const router = useRouter();
   const [language] = useStorage<Language>('language', 'en');
+  const [propagation] = useStorage<PropagationMode>('propagation', 'lemma');
 
   const w = findWord(Number(page), Number(surah), Number(verse), Number(wordPos));
   if (!w || isVerseMarker(w)) return null;
 
+  const currentStatus = useWordStatus(w);
   const meaning = getWordMeaning(w, language);
   const root = w.ri != null ? getRootById(w.ri) : undefined;
   const lemma = w.li != null ? getLemmaById(w.li) : undefined;
+  const isLearning = mode === 'learning';
+
+  const handleStatusPress = (status: WordStatus) => {
+    setWordStatus(w, status, propagation);
+    router.back();
+  };
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
@@ -47,6 +65,41 @@ export default function WordSheet() {
       >
         {w.a}
       </Text>
+
+      {/* Status selector — learning mode only */}
+      {isLearning && (
+        <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+          {STATUS_OPTIONS.map((opt) => {
+            const isActive = currentStatus === opt.key;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => handleStatusPress(opt.key)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  borderCurve: 'continuous',
+                  alignItems: 'center',
+                  backgroundColor: isActive ? opt.bg : 'transparent',
+                  borderWidth: 1.5,
+                  borderColor: isActive ? opt.border : '#E5E7EB',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: isActive ? '600' : '400',
+                    color: isActive ? '#111827' : '#6B7280',
+                  }}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {/* Transliteration */}
       {w.t.length > 0 && (

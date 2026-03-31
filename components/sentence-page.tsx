@@ -1,3 +1,4 @@
+'use no memo';
 import { useState } from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -5,6 +6,7 @@ import type { PageData, ReaderMode, Language, Word } from '@/types/quran';
 import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
 
@@ -46,7 +48,7 @@ type Props = {
 };
 
 /** Render inline Arabic words with per-word tap handling */
-function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: ReaderMode; pageNumber: number; router: ReturnType<typeof useRouter> }) {
+function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: ReaderMode; pageNumber: number; router: ReturnType<typeof useRouter>; }) {
   return (
     <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, lineHeight: 48, textAlign: 'right', writingDirection: 'rtl' }}>
       {words.map((word) => {
@@ -58,7 +60,7 @@ function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: Re
               if (isVerseMarker(word)) {
                 router.push(`/ayah-sheet?surah=${word.s}&ayah=${word.v}`);
               } else {
-                router.push(`/word-sheet?page=${pageNumber}&surah=${word.s}&verse=${word.v}&word=${word.w}`);
+                router.push(`/word-sheet?page=${pageNumber}&surah=${word.s}&verse=${word.v}&word=${word.w}&mode=${mode}`);
               }
             }}
             style={bg ? { backgroundColor: bg, borderRadius: 4 } : undefined}
@@ -72,6 +74,7 @@ function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: Re
 }
 
 export default function SentencePage({ page, mode, language, bottomPadding, pageNumber }: Props) {
+  useWordStatusVersion();
   const router = useRouter();
   const sections = getPageSections(page);
 

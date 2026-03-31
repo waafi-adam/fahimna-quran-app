@@ -1,3 +1,4 @@
+'use no memo';
 import { useState } from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -5,6 +6,7 @@ import type { PageData, ReaderMode, Language } from '@/types/quran';
 import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 import WordCard from '@/components/word-card';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
@@ -41,6 +43,7 @@ type Props = {
 };
 
 export default function WbwPage({ page, mode, language, bottomPadding, pageNumber }: Props) {
+  useWordStatusVersion();
   const router = useRouter();
   const sections = getPageSections(page);
 
@@ -84,7 +87,7 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
                   onPress={
                     isVerseMarker(word)
                       ? () => router.push(`/ayah-sheet?surah=${word.s}&ayah=${word.v}`)
-                      : () => router.push(`/word-sheet?page=${pageNumber}&surah=${word.s}&verse=${word.v}&word=${word.w}`)
+                      : () => router.push(`/word-sheet?page=${pageNumber}&surah=${word.s}&verse=${word.v}&word=${word.w}&mode=${mode}`)
                   }
                 />
               ))}

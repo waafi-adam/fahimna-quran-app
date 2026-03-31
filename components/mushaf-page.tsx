@@ -1,7 +1,9 @@
+'use no memo';
 import { View, Text, ScrollView } from 'react-native';
 import type { PageData, AyahLine, ReaderMode, Word } from '@/types/quran';
 import { getChapter } from '@/lib/quran-data';
 import { getWordStatus } from '@/lib/word-status';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 
 const STATUS_COLOR: Record<string, string | undefined> = {
   new: '#DBEAFE',
@@ -19,6 +21,7 @@ type Props = {
 };
 
 export default function MushafPage({ page, mode, contentHeight, onWordPress }: Props) {
+  useWordStatusVersion();
   // Build inline children: surah banners break the flow, everything else is continuous text
   const blocks: React.ReactNode[] = [];
   let currentWords: Word[] = [];

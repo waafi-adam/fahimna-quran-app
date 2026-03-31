@@ -5,6 +5,7 @@ import type { ReaderLayout, ReaderMode, Language } from '@/types/quran';
 import { getPage, getChapter, isVerseMarker } from '@/lib/quran-data';
 import { getSurahsOnPage } from '@/lib/page-helpers';
 import { useStorage } from '@/hooks/use-storage';
+import { useWordStatusVersion } from '@/hooks/use-word-status';
 import { storage } from '@/lib/storage';
 import WbwPage from '@/components/wbw-page';
 import SentencePage from '@/components/sentence-page';
@@ -29,14 +30,15 @@ export default function ReaderScreen() {
 
   const router = useRouter();
   const flatListRef = useRef<FlatList<number>>(null);
+  const statusVersion = useWordStatusVersion();
 
   const handleWordPress = useCallback((word: Word, pageNum: number) => {
     if (isVerseMarker(word)) {
       router.push(`/ayah-sheet?surah=${word.s}&ayah=${word.v}`);
     } else {
-      router.push(`/word-sheet?page=${pageNum}&surah=${word.s}&verse=${word.v}&word=${word.w}`);
+      router.push(`/word-sheet?page=${pageNum}&surah=${word.s}&verse=${word.v}&word=${word.w}&mode=${mode}`);
     }
-  }, [router]);
+  }, [router, mode]);
 
   // Header title — show surah name(s) on current page
   const headerTitle = useMemo(() => {
@@ -82,7 +84,7 @@ export default function ReaderScreen() {
         />
       </View>
     ),
-    [width, layout, mode, language, mushafContentHeight],
+    [width, layout, mode, language, mushafContentHeight, statusVersion],
   );
 
   return (
@@ -121,7 +123,7 @@ export default function ReaderScreen() {
           windowSize={3}
           maxToRenderPerBatch={1}
           removeClippedSubviews
-          extraData={`${layout}:${mode}:${language}`}
+          extraData={`${layout}:${mode}:${language}:${statusVersion}`}
           style={{ flex: 1 }}
         />
 
