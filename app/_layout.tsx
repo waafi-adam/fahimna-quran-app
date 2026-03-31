@@ -64,7 +64,8 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
-        <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+        <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

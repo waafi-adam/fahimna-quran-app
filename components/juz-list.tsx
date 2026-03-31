@@ -1,7 +1,10 @@
+'use no memo';
 import { useState, useCallback } from 'react';
 import { View, Text, Pressable, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getJuzList, getRubList, getChapter } from '@/lib/quran-data';
+import { getJuzProgress } from '@/lib/progress';
+import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
 import type { Rub } from '@/types/quran';
 
 const juzList = getJuzList();
@@ -75,6 +78,8 @@ function JuzCard({ juzId }: { juzId: number }) {
   const [expanded, setExpanded] = useState(false);
   const juz = juzList[juzId - 1];
   const rubs = rubsByJuz[juzId - 1];
+  const progress = getJuzProgress(juz);
+  const hasProgress = progress.known > 0 || progress.learning > 0;
 
   return (
     <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb' }}>
@@ -104,18 +109,41 @@ function JuzCard({ juzId }: { juzId: number }) {
           </Text>
         </View>
 
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
-            Juz {juzId}
-          </Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+              Juz {juzId}
+            </Text>
+            <Text style={{ fontSize: 16, color: '#9ca3af' }}>
+              {expanded ? '▾' : '▸'}
+            </Text>
+          </View>
           <Text style={{ fontSize: 12, color: '#6b7280' }}>
             {verseRef(juz.firstVerse)} — {juz.versesCount} ayahs
           </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <ProgressBar counts={progress} height={4} />
+            </View>
+            {hasProgress && (
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {progress.known > 0 && (
+                  <Text style={{ fontSize: 10, color: PROGRESS_COLORS.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                    {progress.known}
+                  </Text>
+                )}
+                {progress.learning > 0 && (
+                  <Text style={{ fontSize: 10, color: PROGRESS_COLORS.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                    {progress.learning}
+                  </Text>
+                )}
+                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.new, fontVariant: ['tabular-nums'] }}>
+                  {progress.new}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
-
-        <Text style={{ fontSize: 16, color: '#9ca3af' }}>
-          {expanded ? '▾' : '▸'}
-        </Text>
       </Pressable>
 
       {expanded && (

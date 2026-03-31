@@ -1,6 +1,9 @@
+'use no memo';
 import { View, Text, Pressable, SectionList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getChapters, getJuzList } from '@/lib/quran-data';
+import { getSurahProgress } from '@/lib/progress';
+import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
 import type { Chapter } from '@/types/quran';
 
 type SurahSection = {
@@ -25,6 +28,8 @@ const sections = buildSections();
 
 function SurahRow({ chapter }: { chapter: Chapter }) {
   const router = useRouter();
+  const progress = getSurahProgress(chapter.id);
+  const hasProgress = progress.known > 0 || progress.learning > 0;
 
   return (
     <Pressable
@@ -75,6 +80,28 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
           <Text style={{ fontSize: 12, color: '#6b7280', fontVariant: ['tabular-nums'] }}>
             p. {chapter.startPage}
           </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          <View style={{ flex: 1 }}>
+            <ProgressBar counts={progress} height={4} />
+          </View>
+          {hasProgress && (
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {progress.known > 0 && (
+                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                  {progress.known}
+                </Text>
+              )}
+              {progress.learning > 0 && (
+                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                  {progress.learning}
+                </Text>
+              )}
+              <Text style={{ fontSize: 10, color: PROGRESS_COLORS.new, fontVariant: ['tabular-nums'] }}>
+                {progress.new}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>

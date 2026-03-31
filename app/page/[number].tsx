@@ -11,6 +11,7 @@ import WbwPage from '@/components/wbw-page';
 import SentencePage from '@/components/sentence-page';
 import MushafPage from '@/components/mushaf-page';
 import ReaderFooter from '@/components/reader-footer';
+import HeaderActions from '@/components/header-actions';
 import type { Word } from '@/types/quran';
 
 const PAGE_IDS = Array.from({ length: 604 }, (_, i) => i + 1);
@@ -93,9 +94,12 @@ export default function ReaderScreen() {
         options={{
           title: headerTitle,
           headerRight: () => (
-            <Text style={{ fontSize: 13, color: '#6B7280', fontVariant: ['tabular-nums'] }}>
-              {currentPage} / 604
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ fontSize: 13, color: '#6B7280', fontVariant: ['tabular-nums'] }}>
+                pg {currentPage}
+              </Text>
+              <HeaderActions />
+            </View>
           ),
         }}
       />
