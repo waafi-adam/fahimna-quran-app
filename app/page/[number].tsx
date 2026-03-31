@@ -1,11 +1,14 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { View, Text, FlatList, useWindowDimensions, type ViewToken } from 'react-native';
+import { View, Text, Pressable, FlatList, useWindowDimensions, type ViewToken } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import type { ReaderLayout, ReaderMode, Language } from '@/types/quran';
 import { getPage, getChapter, isVerseMarker } from '@/lib/quran-data';
 import { getSurahsOnPage } from '@/lib/page-helpers';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useBookmarkVersion } from '@/hooks/use-bookmarks';
+import { isPageBookmarked, togglePageBookmark } from '@/lib/bookmarks';
 import { storage } from '@/lib/storage';
 import WbwPage from '@/components/wbw-page';
 import SentencePage from '@/components/sentence-page';
@@ -32,6 +35,8 @@ export default function ReaderScreen() {
   const router = useRouter();
   const flatListRef = useRef<FlatList<number>>(null);
   const statusVersion = useWordStatusVersion();
+  const bookmarkVersion = useBookmarkVersion();
+  const pageBookmarked = isPageBookmarked(currentPage);
 
   const handleWordPress = useCallback((word: Word, pageNum: number) => {
     if (isVerseMarker(word)) {
@@ -98,6 +103,24 @@ export default function ReaderScreen() {
               <Text style={{ fontSize: 13, color: '#6B7280', fontVariant: ['tabular-nums'] }}>
                 pg {currentPage}
               </Text>
+              <Pressable
+                onPress={() => togglePageBookmark(currentPage)}
+                hitSlop={8}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  backgroundColor: pageBookmarked ? '#FEF3C7' : '#F3F4F6',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons
+                  name={pageBookmarked ? 'bookmark' : 'bookmark-outline'}
+                  size={16}
+                  color={pageBookmarked ? '#D97706' : '#6B7280'}
+                />
+              </Pressable>
               <HeaderActions />
             </View>
           ),
