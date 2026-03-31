@@ -10,7 +10,8 @@ import {
   type ProgressCounts,
 } from '@/lib/progress';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
-import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
+import ProgressBar from '@/components/progress-bar';
+import { useTheme } from '@/lib/theme';
 
 function formatNum(n: number): string {
   return n.toLocaleString();
@@ -27,6 +28,7 @@ type SurahProgressRow = {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const statusVersion = useWordStatusVersion();
 
@@ -53,18 +55,18 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#fff' }}
+      style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       {/* Hero — overall comprehension */}
       <View style={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24 }}>
-        <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 8 }}>
+        <Text style={{ fontSize: 14, color: colors.textMuted, marginBottom: 8 }}>
           You understand
         </Text>
-        <Text style={{ fontSize: 56, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] }}>
+        <Text style={{ fontSize: 56, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] }}>
           {overallPct}%
         </Text>
-        <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 4 }}>
+        <Text style={{ fontSize: 14, color: colors.textMuted, marginTop: 4 }}>
           of the Quran
         </Text>
       </View>
@@ -75,33 +77,33 @@ export default function ProfileScreen() {
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: PROGRESS_COLORS.known }} />
-            <Text style={{ fontSize: 12, color: '#374151' }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.progressKnown }} />
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Known {formatNum(overall.known)}
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: PROGRESS_COLORS.learning }} />
-            <Text style={{ fontSize: 12, color: '#374151' }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.progressLearning }} />
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Learning {formatNum(overall.learning)}
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: PROGRESS_COLORS.new }} />
-            <Text style={{ fontSize: 12, color: '#374151' }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.progressNew }} />
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               New {formatNum(overall.new)}
             </Text>
           </View>
         </View>
 
-        <Text style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginTop: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.textFaint, textAlign: 'center', marginTop: 4 }}>
           {formatNum(overall.total)} total words
         </Text>
       </View>
 
       {/* Surah progress list */}
       <View style={{ marginTop: 28 }}>
-        <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827', paddingHorizontal: 24, marginBottom: 12 }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text, paddingHorizontal: 24, marginBottom: 12 }}>
           Surahs by Progress
         </Text>
 
@@ -114,14 +116,14 @@ export default function ProfileScreen() {
               alignItems: 'center',
               paddingVertical: 10,
               paddingHorizontal: 24,
-              backgroundColor: pressed ? '#f3f4f6' : 'transparent',
+              backgroundColor: pressed ? colors.pressed : 'transparent',
             })}
           >
             <Text
               style={{
                 width: 28,
                 fontSize: 12,
-                color: '#9CA3AF',
+                color: colors.textFaint,
                 fontVariant: ['tabular-nums'],
               }}
             >
@@ -130,10 +132,10 @@ export default function ProfileScreen() {
 
             <View style={{ flex: 1, gap: 3 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 14, fontWeight: '500', color: '#111827' }}>
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.text }}>
                   {row.name}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#6B7280', fontVariant: ['tabular-nums'] }}>
+                <Text style={{ fontSize: 12, color: colors.textMuted, fontVariant: ['tabular-nums'] }}>
                   {row.pct}%
                 </Text>
               </View>

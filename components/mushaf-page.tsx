@@ -4,12 +4,7 @@ import type { PageData, AyahLine, ReaderMode, Word } from '@/types/quran';
 import { getChapter } from '@/lib/quran-data';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
-
-const STATUS_COLOR: Record<string, string | undefined> = {
-  new: '#DBEAFE',
-  learning: '#FEF3C7',
-  known: undefined,
-};
+import { useTheme } from '@/lib/theme';
 
 const BISMILLAH_TEXT = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
 
@@ -22,6 +17,14 @@ type Props = {
 
 export default function MushafPage({ page, mode, contentHeight, onWordPress }: Props) {
   useWordStatusVersion();
+  const { colors } = useTheme();
+
+  const STATUS_COLOR: Record<string, string | undefined> = {
+    new: colors.statusNewBg,
+    learning: colors.statusLearningBg,
+    known: undefined,
+  };
+
   // Build inline children: surah banners break the flow, everything else is continuous text
   const blocks: React.ReactNode[] = [];
   let currentWords: Word[] = [];
@@ -36,7 +39,7 @@ export default function MushafPage({ page, mode, contentHeight, onWordPress }: P
         style={{
           fontFamily: 'UthmanicHafs',
           fontSize: 24,
-          color: '#111827',
+          color: colors.text,
           textAlign: 'center',
           writingDirection: 'rtl',
           lineHeight: 48,
@@ -68,11 +71,11 @@ export default function MushafPage({ page, mode, contentHeight, onWordPress }: P
       const ch = getChapter(line.surah);
       blocks.push(
         <View key={`s-${line.line}`} style={{ alignItems: 'center', marginVertical: 8 }}>
-          <Text style={{ fontFamily: 'SurahName', fontSize: 24, color: '#374151', textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'SurahName', fontSize: 24, color: colors.textSecondary, textAlign: 'center' }}>
             {fontKey}
           </Text>
           {ch?.bismillahPre && (
-            <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 22, color: '#374151', textAlign: 'center', marginTop: 4 }}>
+            <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 22, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
               {BISMILLAH_TEXT}
             </Text>
           )}

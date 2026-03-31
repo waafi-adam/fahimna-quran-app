@@ -4,7 +4,8 @@ import { View, Text, Pressable, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getJuzList, getRubList, getChapter } from '@/lib/quran-data';
 import { getJuzProgress } from '@/lib/progress';
-import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
+import ProgressBar, { getProgressColors } from '@/components/progress-bar';
+import { useTheme } from '@/lib/theme';
 import type { Rub } from '@/types/quran';
 
 const juzList = getJuzList();
@@ -32,6 +33,7 @@ function verseRef(verse: string): string {
 
 function RubRow({ rub, rubIndex }: { rub: Rub; rubIndex: number }) {
   const router = useRouter();
+  const { colors } = useTheme();
   // Figure out start page from first verse
   const [surahNum] = rub.firstVerse.split(':').map(Number);
   const ch = getChapter(surahNum);
@@ -44,28 +46,28 @@ function RubRow({ rub, rubIndex }: { rub: Rub; rubIndex: number }) {
         flexDirection: 'row',
         paddingVertical: 10,
         paddingHorizontal: 20,
-        backgroundColor: pressed ? '#f3f4f6' : 'transparent',
+        backgroundColor: pressed ? colors.pressed : 'transparent',
         gap: 12,
         alignItems: 'center',
       })}
     >
       <View style={{ width: 28, alignItems: 'center' }}>
-        <Text style={{ fontSize: 11, color: '#9ca3af', fontVariant: ['tabular-nums'] }}>
+        <Text style={{ fontSize: 11, color: colors.textFaint, fontVariant: ['tabular-nums'] }}>
           {rub.id}
         </Text>
       </View>
 
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>
+        <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary }}>
           {quarterLabel(rubIndex)}
         </Text>
-        <Text style={{ fontSize: 12, color: '#6b7280' }}>
+        <Text style={{ fontSize: 12, color: colors.textMuted }}>
           {verseRef(rub.firstVerse)} — {rub.versesCount} ayahs
         </Text>
       </View>
 
       <Text
-        style={{ fontSize: 15, fontFamily: 'UthmanicHafs', color: '#374151', maxWidth: 160 }}
+        style={{ fontSize: 15, fontFamily: 'UthmanicHafs', color: colors.textSecondary, maxWidth: 160 }}
         numberOfLines={1}
       >
         {rub.snippet}
@@ -76,13 +78,15 @@ function RubRow({ rub, rubIndex }: { rub: Rub; rubIndex: number }) {
 
 function JuzCard({ juzId }: { juzId: number }) {
   const [expanded, setExpanded] = useState(false);
+  const { colors } = useTheme();
+  const pc = getProgressColors(colors);
   const juz = juzList[juzId - 1];
   const rubs = rubsByJuz[juzId - 1];
   const progress = getJuzProgress(juz);
   const hasProgress = progress.known > 0 || progress.learning > 0;
 
   return (
-    <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb' }}>
+    <View style={{ borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
       <Pressable
         onPress={() => setExpanded((e) => !e)}
         style={({ pressed }) => ({
@@ -90,7 +94,7 @@ function JuzCard({ juzId }: { juzId: number }) {
           alignItems: 'center',
           paddingVertical: 14,
           paddingHorizontal: 16,
-          backgroundColor: pressed ? '#f3f4f6' : 'transparent',
+          backgroundColor: pressed ? colors.pressed : 'transparent',
           gap: 12,
         })}
       >
@@ -99,26 +103,26 @@ function JuzCard({ juzId }: { juzId: number }) {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: '#fef3c7',
+            backgroundColor: colors.juzBadgeBg,
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#92400e', fontVariant: ['tabular-nums'] }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.juzBadge, fontVariant: ['tabular-nums'] }}>
             {juzId}
           </Text>
         </View>
 
         <View style={{ flex: 1, gap: 4 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
               Juz {juzId}
             </Text>
-            <Text style={{ fontSize: 16, color: '#9ca3af' }}>
+            <Text style={{ fontSize: 16, color: colors.textFaint }}>
               {expanded ? '▾' : '▸'}
             </Text>
           </View>
-          <Text style={{ fontSize: 12, color: '#6b7280' }}>
+          <Text style={{ fontSize: 12, color: colors.textMuted }}>
             {verseRef(juz.firstVerse)} — {juz.versesCount} ayahs
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -128,16 +132,16 @@ function JuzCard({ juzId }: { juzId: number }) {
             {hasProgress && (
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {progress.known > 0 && (
-                  <Text style={{ fontSize: 10, color: PROGRESS_COLORS.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ fontSize: 10, color: pc.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
                     {progress.known}
                   </Text>
                 )}
                 {progress.learning > 0 && (
-                  <Text style={{ fontSize: 10, color: PROGRESS_COLORS.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ fontSize: 10, color: pc.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
                     {progress.learning}
                   </Text>
                 )}
-                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.new, fontVariant: ['tabular-nums'] }}>
+                <Text style={{ fontSize: 10, color: pc.new, fontVariant: ['tabular-nums'] }}>
                   {progress.new}
                 </Text>
               </View>
@@ -147,7 +151,7 @@ function JuzCard({ juzId }: { juzId: number }) {
       </Pressable>
 
       {expanded && (
-        <View style={{ backgroundColor: '#fafafa' }}>
+        <View style={{ backgroundColor: colors.bgExpanded }}>
           {rubs.map((rub, i) => (
             <RubRow key={rub.id} rub={rub} rubIndex={i} />
           ))}

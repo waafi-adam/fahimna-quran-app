@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { getChapters, getJuzList } from '@/lib/quran-data';
 import { getSurahProgress } from '@/lib/progress';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
-import ProgressBar, { PROGRESS_COLORS } from '@/components/progress-bar';
+import ProgressBar, { getProgressColors } from '@/components/progress-bar';
+import { useTheme } from '@/lib/theme';
 import type { Chapter } from '@/types/quran';
 
 type SurahSection = {
@@ -29,6 +30,8 @@ const sections = buildSections();
 
 function SurahRow({ chapter }: { chapter: Chapter }) {
   const router = useRouter();
+  const { colors } = useTheme();
+  const pc = getProgressColors(colors);
   const progress = getSurahProgress(chapter.id);
   const hasProgress = progress.known > 0 || progress.learning > 0;
 
@@ -40,7 +43,7 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 16,
-        backgroundColor: pressed ? '#f3f4f6' : 'transparent',
+        backgroundColor: pressed ? colors.pressed : 'transparent',
       })}
     >
       <View
@@ -48,37 +51,37 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
           width: 36,
           height: 36,
           borderRadius: 18,
-          backgroundColor: '#e0e7ff',
+          backgroundColor: colors.accentBg,
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#4338ca', fontVariant: ['tabular-nums'] }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent, fontVariant: ['tabular-nums'] }}>
           {chapter.id}
         </Text>
       </View>
 
       <View style={{ flex: 1, marginLeft: 12, gap: 2 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
             {chapter.nameSimple}
           </Text>
           <Text
-            style={{ fontSize: 18, fontFamily: 'UthmanicHafs', color: '#111827' }}
+            style={{ fontSize: 18, fontFamily: 'UthmanicHafs', color: colors.text }}
           >
             {chapter.nameArabic}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontSize: 12, color: '#6b7280', textTransform: 'capitalize' }}>
+          <Text style={{ fontSize: 12, color: colors.textMuted, textTransform: 'capitalize' }}>
             {chapter.revelationPlace}
           </Text>
-          <Text style={{ fontSize: 12, color: '#d1d5db' }}>·</Text>
-          <Text style={{ fontSize: 12, color: '#6b7280', fontVariant: ['tabular-nums'] }}>
+          <Text style={{ fontSize: 12, color: colors.borderInactive }}>·</Text>
+          <Text style={{ fontSize: 12, color: colors.textMuted, fontVariant: ['tabular-nums'] }}>
             {chapter.versesCount} ayahs
           </Text>
-          <Text style={{ fontSize: 12, color: '#d1d5db' }}>·</Text>
-          <Text style={{ fontSize: 12, color: '#6b7280', fontVariant: ['tabular-nums'] }}>
+          <Text style={{ fontSize: 12, color: colors.borderInactive }}>·</Text>
+          <Text style={{ fontSize: 12, color: colors.textMuted, fontVariant: ['tabular-nums'] }}>
             p. {chapter.startPage}
           </Text>
         </View>
@@ -89,16 +92,16 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
           {hasProgress && (
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {progress.known > 0 && (
-                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                <Text style={{ fontSize: 10, color: pc.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
                   {progress.known}
                 </Text>
               )}
               {progress.learning > 0 && (
-                <Text style={{ fontSize: 10, color: PROGRESS_COLORS.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                <Text style={{ fontSize: 10, color: pc.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
                   {progress.learning}
                 </Text>
               )}
-              <Text style={{ fontSize: 10, color: PROGRESS_COLORS.new, fontVariant: ['tabular-nums'] }}>
+              <Text style={{ fontSize: 10, color: pc.new, fontVariant: ['tabular-nums'] }}>
                 {progress.new}
               </Text>
             </View>
@@ -110,6 +113,7 @@ function SurahRow({ chapter }: { chapter: Chapter }) {
 }
 
 export default function SurahList() {
+  const { colors } = useTheme();
   useWordStatusVersion(); // re-render all rows when any word status changes
   return (
     <SectionList
@@ -118,15 +122,15 @@ export default function SurahList() {
       contentInsetAdjustmentBehavior="automatic"
       stickySectionHeadersEnabled={false}
       renderSectionHeader={({ section }) => (
-        <View style={{ backgroundColor: '#f9fafb', paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#6b7280' }}>
+        <View style={{ backgroundColor: colors.bgSecondary, paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textMuted }}>
             Juz {section.juz}
           </Text>
         </View>
       )}
       renderItem={({ item }) => <SurahRow chapter={item} />}
       ItemSeparatorComponent={() => (
-        <View style={{ height: 0.5, backgroundColor: '#f3f4f6', marginLeft: 64 }} />
+        <View style={{ height: 0.5, backgroundColor: colors.borderLight, marginLeft: 64 }} />
       )}
     />
   );

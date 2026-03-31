@@ -4,28 +4,22 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { ThemeProvider, useTheme } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    UthmanicHafs: require('@/assets/fonts/UthmanicHafs_V22.ttf'),
-    SurahName: require('@/assets/fonts/surah-name-v2.ttf'),
-  });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
+function ThemedStack() {
+  const { colors, isDark } = useTheme();
 
   return (
     <>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.headerText,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      >
         <Stack.Screen name="index" options={{ title: 'Fahimna' }} />
         <Stack.Screen
           name="page/[number]"
@@ -68,7 +62,30 @@ export default function RootLayout() {
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    UthmanicHafs: require('@/assets/fonts/UthmanicHafs_V22.ttf'),
+    SurahName: require('@/assets/fonts/surah-name-v2.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider>
+      <ThemedStack />
+    </ThemeProvider>
   );
 }

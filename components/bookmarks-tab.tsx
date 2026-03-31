@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getBookmarks, removeBookmark, type Bookmark } from '@/lib/bookmarks';
 import { useBookmarkVersion } from '@/hooks/use-bookmarks';
 import { getChapter } from '@/lib/quran-data';
+import { useTheme } from '@/lib/theme';
 
 type BookmarkSection = {
   title: string;
@@ -13,6 +14,7 @@ type BookmarkSection = {
 
 function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
   const router = useRouter();
+  const { colors } = useTheme();
   const isAyah = bookmark.sura != null;
   const chapter = isAyah ? getChapter(bookmark.sura!) : null;
 
@@ -24,7 +26,7 @@ function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 16,
-        backgroundColor: pressed ? '#f3f4f6' : 'transparent',
+        backgroundColor: pressed ? colors.pressed : 'transparent',
       })}
     >
       <View
@@ -32,7 +34,7 @@ function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
           width: 36,
           height: 36,
           borderRadius: 18,
-          backgroundColor: isAyah ? '#FEF3C7' : '#E0E7FF',
+          backgroundColor: isAyah ? colors.bookmarkBg : colors.accentBg,
           justifyContent: 'center',
           alignItems: 'center',
         }}
@@ -40,26 +42,26 @@ function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
         <Ionicons
           name={isAyah ? 'book-outline' : 'document-outline'}
           size={16}
-          color={isAyah ? '#D97706' : '#4338CA'}
+          color={isAyah ? colors.bookmark : colors.accent}
         />
       </View>
 
       <View style={{ flex: 1, marginLeft: 12, gap: 2 }}>
         {isAyah ? (
           <>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
               {chapter?.nameSimple} · Ayah {bookmark.ayah}
             </Text>
-            <Text style={{ fontSize: 12, color: '#6b7280' }}>
+            <Text style={{ fontSize: 12, color: colors.textMuted }}>
               p. {bookmark.page}
             </Text>
           </>
         ) : (
           <>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
               Page {bookmark.page}
             </Text>
-            <Text style={{ fontSize: 12, color: '#6b7280' }}>
+            <Text style={{ fontSize: 12, color: colors.textMuted }}>
               {getSurahNamesForPage(bookmark.page)}
             </Text>
           </>
@@ -71,14 +73,13 @@ function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
         hitSlop={8}
         style={{ padding: 4 }}
       >
-        <Ionicons name="close-circle-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="close-circle-outline" size={20} color={colors.textFaint} />
       </Pressable>
     </Pressable>
   );
 }
 
 function getSurahNamesForPage(page: number): string {
-  // Find surahs that start on or before this page
   const names: string[] = [];
   for (let id = 1; id <= 114; id++) {
     const ch = getChapter(id);
@@ -93,13 +94,14 @@ function getSurahNamesForPage(page: number): string {
 }
 
 function EmptyState() {
+  const { colors } = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
-      <Ionicons name="bookmark-outline" size={40} color="#D1D5DB" style={{ marginBottom: 12 }} />
-      <Text style={{ fontSize: 17, fontWeight: '600', color: '#111827', marginBottom: 6 }}>
+      <Ionicons name="bookmark-outline" size={40} color={colors.borderInactive} style={{ marginBottom: 12 }} />
+      <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 6 }}>
         No Bookmarks
       </Text>
-      <Text style={{ fontSize: 14, color: '#6b7280', textAlign: 'center' }}>
+      <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center' }}>
         Bookmark pages from the reader or ayahs from the ayah preview.
       </Text>
     </View>
@@ -107,6 +109,7 @@ function EmptyState() {
 }
 
 export default function BookmarksTab() {
+  const { colors } = useTheme();
   useBookmarkVersion(); // re-render on bookmark changes
 
   const bookmarks = getBookmarks();
@@ -138,15 +141,15 @@ export default function BookmarksTab() {
       contentInsetAdjustmentBehavior="automatic"
       stickySectionHeadersEnabled={false}
       renderSectionHeader={({ section }) => (
-        <View style={{ backgroundColor: '#f9fafb', paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#6b7280' }}>
+        <View style={{ backgroundColor: colors.bgSecondary, paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textMuted }}>
             {section.title}
           </Text>
         </View>
       )}
       renderItem={({ item }) => <BookmarkRow bookmark={item} />}
       ItemSeparatorComponent={() => (
-        <View style={{ height: 0.5, backgroundColor: '#f3f4f6', marginLeft: 64 }} />
+        <View style={{ height: 0.5, backgroundColor: colors.borderLight, marginLeft: 64 }} />
       )}
     />
   );

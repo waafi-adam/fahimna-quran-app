@@ -1,9 +1,11 @@
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/lib/theme';
 
 export default function HeaderActions() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
@@ -15,12 +17,12 @@ export default function HeaderActions() {
           width: 28,
           height: 28,
           borderRadius: 8,
-          backgroundColor: '#E0E7FF',
+          backgroundColor: colors.accentBg,
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Ionicons name="stats-chart-outline" size={16} color="#4338CA" />
+        <Ionicons name="stats-chart-outline" size={16} color={colors.accent} />
       </Pressable>
 
       {/* Settings */}
@@ -31,12 +33,12 @@ export default function HeaderActions() {
           width: 28,
           height: 28,
           borderRadius: 8,
-          backgroundColor: '#F3F4F6',
+          backgroundColor: colors.bgTertiary,
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        <Ionicons name="settings-outline" size={16} color="#6B7280" />
+        <Ionicons name="settings-outline" size={16} color={colors.textMuted} />
       </Pressable>
     </View>
   );

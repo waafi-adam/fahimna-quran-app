@@ -7,6 +7,7 @@ import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useTheme } from '@/lib/theme';
 import WordCard from '@/components/word-card';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
@@ -14,10 +15,11 @@ import BismillahBanner from '@/components/bismillah-banner';
 /** Translation row – always visible in reading mode, tap-to-reveal in learning mode */
 function AyahTranslation({ text, mode }: { text: string; mode: ReaderMode }) {
   const [revealed, setRevealed] = useState(mode === 'reading');
+  const { colors } = useTheme();
 
   if (mode === 'reading') {
     return (
-      <Text style={{ fontSize: 13, color: '#4B5563', lineHeight: 20, marginTop: 6, paddingHorizontal: 4 }}>
+      <Text style={{ fontSize: 13, color: colors.textTertiary, lineHeight: 20, marginTop: 6, paddingHorizontal: 4 }}>
         {text}
       </Text>
     );
@@ -26,9 +28,9 @@ function AyahTranslation({ text, mode }: { text: string; mode: ReaderMode }) {
   return (
     <Pressable onPress={() => setRevealed((r) => !r)} style={{ marginTop: 6, paddingHorizontal: 4 }}>
       {revealed ? (
-        <Text style={{ fontSize: 13, color: '#4B5563', lineHeight: 20 }}>{text}</Text>
+        <Text style={{ fontSize: 13, color: colors.textTertiary, lineHeight: 20 }}>{text}</Text>
       ) : (
-        <Text style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>Tap to reveal translation</Text>
+        <Text style={{ fontSize: 12, color: colors.textFaint, fontStyle: 'italic' }}>Tap to reveal translation</Text>
       )}
     </Pressable>
   );
@@ -45,6 +47,7 @@ type Props = {
 export default function WbwPage({ page, mode, language, bottomPadding, pageNumber }: Props) {
   useWordStatusVersion();
   const router = useRouter();
+  const { colors } = useTheme();
   const sections = getPageSections(page);
 
   // Pre-load translations for surahs on this page
@@ -99,7 +102,7 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
             )}
 
             {/* Subtle divider between ayahs */}
-            <View style={{ height: 1, backgroundColor: '#E5E7EB', marginTop: 8 }} />
+            <View style={{ height: 1, backgroundColor: colors.border, marginTop: 8 }} />
           </View>
         );
       })}

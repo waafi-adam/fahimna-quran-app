@@ -3,12 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { Word, WordStatus, ReaderMode, Language } from '@/types/quran';
 import { isVerseMarker } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
-
-const STATUS_BG: Record<WordStatus, string | undefined> = {
-  new: '#DBEAFE',
-  learning: '#FEF3C7',
-  known: undefined,
-};
+import { useTheme } from '@/lib/theme';
 
 type Props = {
   word: Word;
@@ -19,10 +14,18 @@ type Props = {
 };
 
 function WordCard({ word, status, mode, language, onPress }: Props) {
+  const { colors } = useTheme();
+
+  const STATUS_BG: Record<WordStatus, string | undefined> = {
+    new: colors.statusNewBg,
+    learning: colors.statusLearningBg,
+    known: undefined,
+  };
+
   if (isVerseMarker(word)) {
     return (
       <Pressable onPress={onPress} hitSlop={4} style={{ paddingHorizontal: 2, paddingVertical: 4, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: '#6B7280' }}>
+        <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: colors.textMuted }}>
           {word.a}
         </Text>
       </Pressable>
@@ -51,7 +54,7 @@ function WordCard({ word, status, mode, language, onPress }: Props) {
         style={{
           fontFamily: 'UthmanicHafs',
           fontSize: 22,
-          color: '#111827',
+          color: colors.text,
           textAlign: 'center',
         }}
       >
@@ -62,7 +65,7 @@ function WordCard({ word, status, mode, language, onPress }: Props) {
           numberOfLines={2}
           style={{
             fontSize: 10,
-            color: '#6B7280',
+            color: colors.textMuted,
             textAlign: 'center',
             marginTop: 1,
             opacity: meaningOpacity,

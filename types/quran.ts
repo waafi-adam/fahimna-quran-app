@@ -226,3 +226,5 @@ export type ReaderMode = 'reading' | 'learning';
 export type PropagationMode = 'lemma' | 'root' | 'exact';
 
 export type DoubleTapAction = 'learning' | 'known' | 'cycle';
+
+export type ThemeMode = 'light' | 'dark' | 'system';

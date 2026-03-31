@@ -7,16 +7,18 @@ import { getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
+import { useTheme } from '@/lib/theme';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
 
 /** Translation row – always visible in reading mode, tap-to-reveal in learning mode */
 function SentenceTranslation({ text, mode }: { text: string; mode: ReaderMode }) {
   const [revealed, setRevealed] = useState(mode === 'reading');
+  const { colors } = useTheme();
 
   if (mode === 'reading') {
     return (
-      <Text style={{ fontSize: 14, color: '#4B5563', lineHeight: 22, marginTop: 4 }}>
+      <Text style={{ fontSize: 14, color: colors.textTertiary, lineHeight: 22, marginTop: 4 }}>
         {text}
       </Text>
     );
@@ -25,19 +27,13 @@ function SentenceTranslation({ text, mode }: { text: string; mode: ReaderMode })
   return (
     <Pressable onPress={() => setRevealed((r) => !r)} style={{ marginTop: 4 }}>
       {revealed ? (
-        <Text style={{ fontSize: 14, color: '#4B5563', lineHeight: 22 }}>{text}</Text>
+        <Text style={{ fontSize: 14, color: colors.textTertiary, lineHeight: 22 }}>{text}</Text>
       ) : (
-        <Text style={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>Tap to reveal translation</Text>
+        <Text style={{ fontSize: 12, color: colors.textFaint, fontStyle: 'italic' }}>Tap to reveal translation</Text>
       )}
     </Pressable>
   );
 }
-
-const STATUS_COLOR: Record<string, string | undefined> = {
-  new: '#DBEAFE',
-  learning: '#FEF3C7',
-  known: undefined,
-};
 
 type Props = {
   page: PageData;
@@ -49,6 +45,14 @@ type Props = {
 
 /** Render inline Arabic words with per-word tap handling */
 function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: ReaderMode; pageNumber: number; router: ReturnType<typeof useRouter>; }) {
+  const { colors } = useTheme();
+
+  const STATUS_COLOR: Record<string, string | undefined> = {
+    new: colors.statusNewBg,
+    learning: colors.statusLearningBg,
+    known: undefined,
+  };
+
   return (
     <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, lineHeight: 48, textAlign: 'right', writingDirection: 'rtl' }}>
       {words.map((word) => {
@@ -76,6 +80,7 @@ function AyahText({ words, mode, pageNumber, router }: { words: Word[]; mode: Re
 export default function SentencePage({ page, mode, language, bottomPadding, pageNumber }: Props) {
   useWordStatusVersion();
   const router = useRouter();
+  const { colors } = useTheme();
   const sections = getPageSections(page);
 
   // Pre-load translations
@@ -112,7 +117,7 @@ export default function SentencePage({ page, mode, language, bottomPadding, page
               <SentenceTranslation text={transText} mode={mode} />
             )}
 
-            <View style={{ height: 1, backgroundColor: '#E5E7EB', marginTop: 12 }} />
+            <View style={{ height: 1, backgroundColor: colors.border, marginTop: 12 }} />
           </View>
         );
       })}

@@ -7,11 +7,13 @@ import TabPager from '@/components/tab-pager';
 import SurahList from '@/components/surah-list';
 import JuzListTab from '@/components/juz-list';
 import BookmarksTab from '@/components/bookmarks-tab';
+import { useTheme } from '@/lib/theme';
 
 const TABS = ['Surahs', 'Juz', 'Bookmarks'] as const;
 
 export default function HomeScreen() {
   const [tabIndex, setTabIndex] = useState(0);
+  const { colors } = useTheme();
 
   const onSegmentChange = useCallback(
     ({ nativeEvent }: { nativeEvent: { selectedSegmentIndex: number } }) => {
@@ -29,7 +31,7 @@ export default function HomeScreen() {
         }}
       />
       <View style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#fff' }}>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.bg }}>
           <SegmentedControl
             values={[...TABS]}
             selectedIndex={tabIndex}

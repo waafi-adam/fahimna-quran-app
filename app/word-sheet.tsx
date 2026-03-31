@@ -5,6 +5,7 @@ import { useWordStatus } from '@/hooks/use-word-status';
 import { getPage, getRootById, getLemmaById, isVerseMarker } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
+import { useTheme } from '@/lib/theme';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, ReaderMode } from '@/types/quran';
 
 /** Find a word by surah:verse:position on a given page */
@@ -19,12 +20,6 @@ function findWord(pageNum: number, surah: number, verse: number, wordPos: number
   return null;
 }
 
-const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
-  { key: 'new', label: 'New', bg: '#DBEAFE', border: '#93C5FD' },
-  { key: 'learning', label: 'Learning', bg: '#FEF3C7', border: '#FCD34D' },
-  { key: 'known', label: 'Known', bg: '#D1FAE5', border: '#6EE7B7' },
-];
-
 export default function WordSheet() {
   const { page, surah, verse, word: wordPos, mode } = useLocalSearchParams<{
     page: string;
@@ -37,6 +32,7 @@ export default function WordSheet() {
   const router = useRouter();
   const [language] = useStorage<Language>('language', 'en');
   const [propagation] = useStorage<PropagationMode>('propagation', 'lemma');
+  const { colors } = useTheme();
 
   const w = findWord(Number(page), Number(surah), Number(verse), Number(wordPos));
   if (!w || isVerseMarker(w)) return null;
@@ -47,19 +43,25 @@ export default function WordSheet() {
   const lemma = w.li != null ? getLemmaById(w.li) : undefined;
   const isLearning = mode === 'learning';
 
+  const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
+    { key: 'new', label: 'New', bg: colors.statusNewBg, border: colors.statusNewBorder },
+    { key: 'learning', label: 'Learning', bg: colors.statusLearningBg, border: colors.statusLearningBorder },
+    { key: 'known', label: 'Known', bg: colors.statusKnownBg, border: colors.statusKnownBorder },
+  ];
+
   const handleStatusPress = (status: WordStatus) => {
     setWordStatus(w, status, propagation);
     router.back();
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
+    <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }} style={{ backgroundColor: colors.bg }}>
       {/* Arabic word */}
       <Text
         style={{
           fontFamily: 'UthmanicHafs',
           fontSize: 40,
-          color: '#111827',
+          color: colors.text,
           textAlign: 'center',
         }}
       >
@@ -83,14 +85,14 @@ export default function WordSheet() {
                   alignItems: 'center',
                   backgroundColor: isActive ? opt.bg : 'transparent',
                   borderWidth: 1.5,
-                  borderColor: isActive ? opt.border : '#E5E7EB',
+                  borderColor: isActive ? opt.border : colors.border,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 13,
                     fontWeight: isActive ? '600' : '400',
-                    color: isActive ? '#111827' : '#6B7280',
+                    color: isActive ? colors.text : colors.textMuted,
                   }}
                 >
                   {opt.label}
@@ -103,25 +105,25 @@ export default function WordSheet() {
 
       {/* Transliteration */}
       {w.t.length > 0 && (
-        <Text style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', fontStyle: 'italic' }}>
+        <Text style={{ fontSize: 16, color: colors.textMuted, textAlign: 'center', fontStyle: 'italic' }}>
           {w.t}
         </Text>
       )}
 
       {/* Meaning */}
-      <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
-        <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Meaning</Text>
-        <Text style={{ fontSize: 18, color: '#111827' }}>{meaning}</Text>
+      <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16 }}>
+        <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Meaning</Text>
+        <Text style={{ fontSize: 18, color: colors.text }}>{meaning}</Text>
       </View>
 
       {/* Root */}
       {root && (
-        <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
-          <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Root</Text>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: '#111827' }}>
+        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16 }}>
+          <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Root</Text>
+          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: colors.text }}>
             {root.arabic}
           </Text>
-          <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+          <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
             Used {root.count} times in the Quran
           </Text>
         </View>
@@ -129,19 +131,19 @@ export default function WordSheet() {
 
       {/* Lemma */}
       {lemma && (
-        <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
-          <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>Lemma</Text>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: '#111827' }}>
+        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16 }}>
+          <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Lemma</Text>
+          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: colors.text }}>
             {lemma.arabic}
           </Text>
-          <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+          <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
             Used {lemma.count} times in the Quran
           </Text>
         </View>
       )}
 
       {/* Location */}
-      <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
+      <Text style={{ fontSize: 13, color: colors.textFaint, textAlign: 'center' }}>
         Surah {w.s} · Ayah {w.v} · Word {w.w}
       </Text>
     </ScrollView>

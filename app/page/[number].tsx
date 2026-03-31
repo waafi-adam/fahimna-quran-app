@@ -10,6 +10,7 @@ import { useWordStatusVersion } from '@/hooks/use-word-status';
 import { useBookmarkVersion } from '@/hooks/use-bookmarks';
 import { isPageBookmarked, togglePageBookmark } from '@/lib/bookmarks';
 import { storage } from '@/lib/storage';
+import { useTheme } from '@/lib/theme';
 import WbwPage from '@/components/wbw-page';
 import SentencePage from '@/components/sentence-page';
 import MushafPage from '@/components/mushaf-page';
@@ -37,6 +38,7 @@ export default function ReaderScreen() {
   const statusVersion = useWordStatusVersion();
   const bookmarkVersion = useBookmarkVersion();
   const pageBookmarked = isPageBookmarked(currentPage);
+  const { colors } = useTheme();
 
   const handleWordPress = useCallback((word: Word, pageNum: number) => {
     if (isVerseMarker(word)) {
@@ -100,7 +102,7 @@ export default function ReaderScreen() {
           title: headerTitle,
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 13, color: '#6B7280', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, fontVariant: ['tabular-nums'] }}>
                 pg {currentPage}
               </Text>
               <Pressable
@@ -110,7 +112,7 @@ export default function ReaderScreen() {
                   width: 28,
                   height: 28,
                   borderRadius: 8,
-                  backgroundColor: pageBookmarked ? '#FEF3C7' : '#F3F4F6',
+                  backgroundColor: pageBookmarked ? colors.bookmarkBg : colors.bgTertiary,
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}
@@ -118,7 +120,7 @@ export default function ReaderScreen() {
                 <Ionicons
                   name={pageBookmarked ? 'bookmark' : 'bookmark-outline'}
                   size={16}
-                  color={pageBookmarked ? '#D97706' : '#6B7280'}
+                  color={pageBookmarked ? colors.bookmark : colors.textMuted}
                 />
               </Pressable>
               <HeaderActions />

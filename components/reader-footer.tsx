@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '@/lib/theme';
 import type { ReaderLayout, ReaderMode } from '@/types/quran';
 
 const LAYOUT_ICON: Record<ReaderLayout, keyof typeof Ionicons.glyphMap> = {
@@ -24,6 +25,7 @@ type Props = {
 export default function ReaderFooter({ layout, mode, onModeChange, onHeight }: Props) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useTheme();
 
   const haptic = () => {
     if (process.env.EXPO_OS === 'ios') {
@@ -41,9 +43,9 @@ export default function ReaderFooter({ layout, mode, onModeChange, onHeight }: P
         paddingHorizontal: 16,
         paddingTop: 8,
         paddingBottom: Math.max(insets.bottom, 8),
-        backgroundColor: '#fff',
+        backgroundColor: colors.bg,
         borderTopWidth: 0.5,
-        borderTopColor: '#E5E7EB',
+        borderTopColor: colors.border,
       }}
     >
       {/* Mode toggle */}
@@ -68,12 +70,12 @@ export default function ReaderFooter({ layout, mode, onModeChange, onHeight }: P
           height: 40,
           borderRadius: 10,
           borderCurve: 'continuous',
-          backgroundColor: '#F3F4F6',
+          backgroundColor: colors.bgTertiary,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Ionicons name={LAYOUT_ICON[layout]} size={20} color="#374151" />
+        <Ionicons name={LAYOUT_ICON[layout]} size={20} color={colors.textSecondary} />
       </Pressable>
     </View>
   );

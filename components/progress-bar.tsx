@@ -1,14 +1,18 @@
 import { View } from 'react-native';
 import type { ProgressCounts } from '@/lib/progress';
+import { useTheme, type Colors } from '@/lib/theme';
 
-// Match the highlight colors used in the reader
-const COLORS = {
-  new: '#93C5FD',      // blue (same family as #DBEAFE highlight)
-  learning: '#FCD34D', // yellow (same family as #FEF3C7 highlight)
-  known: '#6EE7B7',    // green (same family as #D1FAE5 highlight)
-};
+export function getProgressColors(colors: Colors) {
+  return {
+    new: colors.progressNew,
+    learning: colors.progressLearning,
+    known: colors.progressKnown,
+  };
+}
 
-export { COLORS as PROGRESS_COLORS };
+// Re-export for backward compat — consumers that just need static access
+// can use getProgressColors(colors) instead
+export { getProgressColors as PROGRESS_COLORS_FN };
 
 type Props = {
   counts: ProgressCounts;
@@ -16,6 +20,8 @@ type Props = {
 };
 
 export default function ProgressBar({ counts, height = 3 }: Props) {
+  const { colors } = useTheme();
+
   if (counts.total === 0) return null;
 
   const knownPct = (counts.known / counts.total) * 100;
@@ -27,19 +33,19 @@ export default function ProgressBar({ counts, height = 3 }: Props) {
       style={{
         height,
         borderRadius: height / 2,
-        backgroundColor: '#E5E7EB',
+        backgroundColor: colors.progressBg,
         flexDirection: 'row',
         overflow: 'hidden',
       }}
     >
       {knownPct > 0 && (
-        <View style={{ width: `${knownPct}%`, backgroundColor: COLORS.known }} />
+        <View style={{ width: `${knownPct}%`, backgroundColor: colors.progressKnown }} />
       )}
       {learningPct > 0 && (
-        <View style={{ width: `${learningPct}%`, backgroundColor: COLORS.learning }} />
+        <View style={{ width: `${learningPct}%`, backgroundColor: colors.progressLearning }} />
       )}
       {newPct > 0 && (
-        <View style={{ width: `${newPct}%`, backgroundColor: COLORS.new }} />
+        <View style={{ width: `${newPct}%`, backgroundColor: colors.progressNew }} />
       )}
     </View>
   );
