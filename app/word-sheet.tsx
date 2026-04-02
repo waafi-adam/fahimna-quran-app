@@ -1,12 +1,21 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatus } from '@/hooks/use-word-status';
-import { getPage, getRootById, getLemmaById, isVerseMarker } from '@/lib/quran-data';
+import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
-import { useTheme } from '@/lib/theme';
-import type { Language, Word, AyahLine, WordStatus, PropagationMode, ReaderMode } from '@/types/quran';
+import { useTheme, type Colors } from '@/lib/theme';
+import TabPager from '@/components/tab-pager';
+import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
+
+const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
+const FORM_ROW_HEIGHT = 44;
+const HEADER_HEIGHT = 48;
+const PAGER_HEIGHT = HEADER_HEIGHT + FORM_ROW_HEIGHT * 5;
+
+type FormsTab = 'exact' | 'lemma' | 'root';
 
 /** Find a word by surah:verse:position on a given page */
 function findWord(pageNum: number, surah: number, verse: number, wordPos: number): Word | null {
@@ -18,6 +27,95 @@ function findWord(pageNum: number, surah: number, verse: number, wordPos: number
     }
   }
   return null;
+}
+
+/** Get meaning from a DerivedForm tuple based on language */
+function getFormMeaning(form: DerivedForm, lang: Language): string {
+  return form[LANG_INDEX[lang]] || form[1];
+}
+
+/** A single tab's content: header info + scrollable forms list */
+function FormsTabContent({
+  forms,
+  arabic,
+  total,
+  currentArabic,
+  language,
+  colors,
+  onFormPress,
+}: {
+  forms: DerivedForm[];
+  arabic: string;
+  total: number;
+  currentArabic: string;
+  language: Language;
+  colors: Colors;
+  onFormPress: (form: DerivedForm) => void;
+}) {
+  const scrollRef = useRef<ScrollView>(null);
+  const currentIndex = forms.findIndex((f) => f[0] === currentArabic);
+
+  useEffect(() => {
+    if (currentIndex > 0) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: currentIndex * FORM_ROW_HEIGHT, animated: false });
+      }, 50);
+    }
+  }, [currentIndex]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Header info */}
+      <View style={{ height: HEADER_HEIGHT, justifyContent: 'center', paddingHorizontal: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18, color: colors.text }}>
+            {arabic}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textMuted }}>
+            {total} times, {forms.length} {forms.length === 1 ? 'form' : 'forms'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Scrollable forms */}
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
+        {forms.map((form) => {
+          const isCurrentForm = form[0] === currentArabic;
+          return (
+            <Pressable
+              key={form[0]}
+              onPress={() => onFormPress(form)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                height: FORM_ROW_HEIGHT,
+                paddingHorizontal: 12,
+                borderRadius: 8,
+                backgroundColor: isCurrentForm ? colors.accentBg : 'transparent',
+              }}
+            >
+              <Text
+                style={{ flex: 1, fontSize: 13, color: colors.textSecondary }}
+                numberOfLines={1}
+              >
+                {getFormMeaning(form, language)}
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.textMuted, marginHorizontal: 12, fontVariant: ['tabular-nums'] }}>
+                {form[4]}×
+              </Text>
+              <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18, color: colors.text }}>
+                {form[0]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 }
 
 export default function WordSheet() {
@@ -43,6 +141,30 @@ export default function WordSheet() {
   const lemma = w.li != null ? getLemmaById(w.li) : undefined;
   const isLearning = mode === 'learning';
 
+  // Pre-compute forms for each tab
+  const rootForms = root ? getRootForms(root.id) : [];
+  const lemmaForms = lemma ? getLemmaForms(lemma.id) : [];
+  const exactCount = getExactCount(w.a);
+  const exactForms: DerivedForm[] = exactCount > 0
+    ? [[w.a, w.m, w.mi, w.mu, exactCount]]
+    : [];
+
+  // Build available tabs (most specific first)
+  const availableTabs: FormsTab[] = [];
+  if (exactForms.length > 0) availableTabs.push('exact');
+  if (lemmaForms.length > 0) availableTabs.push('lemma');
+  if (rootForms.length > 0) availableTabs.push('root');
+
+  const [tabIndex, setTabIndex] = useState(0);
+
+  const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
+    exact: { forms: exactForms, arabic: w.a, total: exactCount },
+    lemma: { forms: lemmaForms, arabic: lemma?.arabic ?? '', total: lemma?.count ?? 0 },
+    root: { forms: rootForms, arabic: root?.arabic ?? '', total: root?.count ?? 0 },
+  };
+
+  const tabLabels: Record<FormsTab, string> = { exact: 'Exact', lemma: 'Lemma', root: 'Root' };
+
   const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
     { key: 'new', label: 'New', bg: colors.statusNewBg, border: colors.statusNewBorder },
     { key: 'learning', label: 'Learning', bg: colors.statusLearningBg, border: colors.statusLearningBorder },
@@ -53,6 +175,15 @@ export default function WordSheet() {
     setWordStatus(w, status, propagation);
     router.back();
   };
+
+  const handleFormPress = useCallback(
+    (form: DerivedForm) => {
+      router.push(
+        `/word-usages?arabic=${encodeURIComponent(form[0])}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}`,
+      );
+    },
+    [router, root, lemma],
+  );
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }} style={{ backgroundColor: colors.bg }}>
@@ -116,29 +247,56 @@ export default function WordSheet() {
         <Text style={{ fontSize: 18, color: colors.text }}>{meaning}</Text>
       </View>
 
-      {/* Root */}
-      {root && (
-        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16 }}>
-          <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Root</Text>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: colors.text }}>
-            {root.arabic}
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
-            Used {root.count} times in the Quran
-          </Text>
-        </View>
-      )}
+      {/* Derived forms with swipeable tabs */}
+      {availableTabs.length > 0 && (
+        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: 'hidden' }}>
+          {/* Tab bar */}
+          <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            {availableTabs.map((tab, i) => {
+              const isActive = i === tabIndex;
+              return (
+                <Pressable
+                  key={tab}
+                  onPress={() => setTabIndex(i)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    alignItems: 'center',
+                    borderBottomWidth: 2,
+                    borderBottomColor: isActive ? colors.text : 'transparent',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: isActive ? '600' : '400',
+                      color: isActive ? colors.text : colors.textMuted,
+                    }}
+                  >
+                    {tabLabels[tab]} ({tabData[tab].total})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
-      {/* Lemma */}
-      {lemma && (
-        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16 }}>
-          <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Lemma</Text>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 24, color: colors.text }}>
-            {lemma.arabic}
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>
-            Used {lemma.count} times in the Quran
-          </Text>
+          {/* Swipeable pager with fixed height */}
+          <View style={{ height: PAGER_HEIGHT }}>
+            <TabPager selectedIndex={tabIndex} onIndexChange={setTabIndex}>
+              {availableTabs.map((tab) => (
+                <FormsTabContent
+                  key={tab}
+                  forms={tabData[tab].forms}
+                  arabic={tabData[tab].arabic}
+                  total={tabData[tab].total}
+                  currentArabic={w.a}
+                  language={language}
+                  colors={colors}
+                  onFormPress={handleFormPress}
+                />
+              ))}
+            </TabPager>
+          </View>
         </View>
       )}
 

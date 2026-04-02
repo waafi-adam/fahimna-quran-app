@@ -1,7 +1,7 @@
 import type {
   Chapter, Juz, Hizb, Rub, PageData, AyahTranslation,
   Reciter, AudioAyah, TafsirIndex, TafsirSurah,
-  Root, Lemma, Word, Language,
+  Root, Lemma, Word, Language, DerivedForm,
 } from '@/types/quran';
 
 // === Eagerly loaded startup data ===
@@ -122,3 +122,24 @@ export function getLemmaById(id: number): Lemma | undefined {
 /** Check if a word is a verse-end marker (not a real Arabic word) */
 export const isVerseMarker = (word: Word): boolean =>
   word.ri == null && word.li == null && word.t === '';
+
+// === Public API — Pre-computed usages data (lazy loaded) ===
+
+let rootFormsData: Record<string, DerivedForm[]> | null = null;
+let lemmaFormsData: Record<string, DerivedForm[]> | null = null;
+let exactCountsData: Record<string, number> | null = null;
+
+export function getRootForms(rootId: number): DerivedForm[] {
+  if (!rootFormsData) rootFormsData = require('@/assets/data/root-forms.json');
+  return rootFormsData![String(rootId)] ?? [];
+}
+
+export function getLemmaForms(lemmaId: number): DerivedForm[] {
+  if (!lemmaFormsData) lemmaFormsData = require('@/assets/data/lemma-forms.json');
+  return lemmaFormsData![String(lemmaId)] ?? [];
+}
+
+export function getExactCount(arabicText: string): number {
+  if (!exactCountsData) exactCountsData = require('@/assets/data/exact-counts.json');
+  return exactCountsData![arabicText] ?? 0;
+}

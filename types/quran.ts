@@ -213,6 +213,11 @@ export type Mutashabihat = {
   ayah: Record<string, [number, number][]>; // "surah:ayah" → [[fromWord, toWord], ...]
 };
 
+// === Derived forms (pre-computed by scripts/generate-usages.js) ===
+
+/** [arabic, meaningEN, meaningID, meaningUR, count] */
+export type DerivedForm = [string, string, string, string, number];
+
 // === App types ===
 
 export type Language = 'en' | 'id' | 'ur';

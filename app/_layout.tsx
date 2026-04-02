@@ -35,7 +35,7 @@ function ThemedStack() {
           name="word-sheet"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.45, 0.75],
+            sheetAllowedDetents: [0.5, 0.85],
             sheetGrabberVisible: true,
             headerShown: false,
           }}
@@ -56,6 +56,13 @@ function ThemedStack() {
             sheetAllowedDetents: [0.45],
             sheetGrabberVisible: true,
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="word-usages"
+          options={{
+            title: 'Usages',
+            headerBackButtonDisplayMode: 'minimal',
           }}
         />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
