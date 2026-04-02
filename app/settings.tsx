@@ -4,7 +4,7 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { useStorage } from '@/hooks/use-storage';
 import { useTheme, type Colors } from '@/lib/theme';
 import { resetAllProgress } from '@/lib/word-status';
-import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode } from '@/types/quran';
+import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode, SwipeAction } from '@/types/quran';
 
 // --- Option data ---
 
@@ -30,6 +30,12 @@ const THEMES: { key: ThemeMode; icon: keyof typeof Ionicons.glyphMap; title: str
   { key: 'system', icon: 'phone-portrait-outline', title: 'System', subtitle: 'Follow your device setting' },
   { key: 'light', icon: 'sunny-outline', title: 'Light', subtitle: 'Always use light theme' },
   { key: 'dark', icon: 'moon-outline', title: 'Dark', subtitle: 'Always use dark theme' },
+];
+
+const SWIPE_ACTIONS: { key: SwipeAction; icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }[] = [
+  { key: 'none', icon: 'hand-right-outline', title: 'Do Nothing', subtitle: 'Swiping only turns the page' },
+  { key: 'known', icon: 'checkmark-done-outline', title: 'Mark as Known', subtitle: 'New words on the page become Known' },
+  { key: 'learning', icon: 'school-outline', title: 'Mark as Learning', subtitle: 'New words on the page become Learning' },
 ];
 
 const MODE_LABELS = ['Reading', 'Learning'];
@@ -106,6 +112,7 @@ export default function SettingsScreen() {
   const [mode, setMode] = useStorage<ReaderMode>('readerMode', 'reading');
   const [language, setLanguage] = useStorage<Language>('language', 'en');
   const [propagation, setPropagation] = useStorage<PropagationMode>('propagation', 'lemma');
+  const [swipeAction, setSwipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
   const { colors, mode: themeMode, setMode: setThemeMode } = useTheme();
 
   const confirmReset = () => {
@@ -191,6 +198,22 @@ export default function SettingsScreen() {
             key={item.key}
             selected={propagation === item.key}
             onPress={() => setPropagation(item.key)}
+            icon={item.icon}
+            title={item.title}
+            subtitle={item.subtitle}
+            colors={colors}
+          />
+        ))}
+      </View>
+
+      {/* Swipe Action */}
+      <SectionHeader label="ON PAGE SWIPE" colors={colors} />
+      <View style={{ paddingHorizontal: 20, gap: 8 }}>
+        {SWIPE_ACTIONS.map((item) => (
+          <RadioCard
+            key={item.key}
+            selected={swipeAction === item.key}
+            onPress={() => setSwipeAction(item.key)}
             icon={item.icon}
             title={item.title}
             subtitle={item.subtitle}

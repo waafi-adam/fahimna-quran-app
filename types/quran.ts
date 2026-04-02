@@ -228,3 +228,5 @@ export type PropagationMode = 'lemma' | 'root' | 'exact';
 export type DoubleTapAction = 'learning' | 'known' | 'cycle';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+export type SwipeAction = 'none' | 'known' | 'learning';

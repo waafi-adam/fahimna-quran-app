@@ -105,6 +105,41 @@ export function getWordCounts(
   return { new: n, learning: l, known: k, total: n + l + k };
 }
 
+/** Bulk-set status for all words on a page that currently have a given status */
+export function bulkSetPageWordStatus(
+  pageNum: number,
+  fromStatus: WordStatus,
+  toStatus: WordStatus,
+): number {
+  const { getPage } = require('@/lib/quran-data');
+  const page = getPage(pageNum);
+  const store = getStore();
+  const toNum = STATUS_TO_NUM[toStatus];
+  let updated = 0;
+
+  for (const line of page.lines) {
+    if (line.type !== 'ayah') continue;
+    for (const word of line.words) {
+      if (isVerseMarker(word)) continue;
+      const key = wordKey(word);
+      const currentStatus = NUM_TO_STATUS[store[key] ?? 0];
+      if (currentStatus !== fromStatus) continue;
+      if (toNum === 0) {
+        delete store[key];
+      } else {
+        store[key] = toNum;
+      }
+      updated++;
+    }
+  }
+
+  if (updated > 0) {
+    scheduleSave();
+    notify();
+  }
+  return updated;
+}
+
 /** Reset all word progress */
 export function resetAllProgress(): void {
   _statuses = {};

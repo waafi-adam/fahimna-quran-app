@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, FlatList, useWindowDimensions, type ViewToken } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import type { ReaderLayout, ReaderMode, Language } from '@/types/quran';
+import type { ReaderLayout, ReaderMode, Language, SwipeAction } from '@/types/quran';
 import { getPage, getChapter, isVerseMarker } from '@/lib/quran-data';
 import { getSurahsOnPage, getAyahPage } from '@/lib/page-helpers';
 import { useStorage } from '@/hooks/use-storage';
@@ -10,6 +10,7 @@ import { useWordStatusVersion } from '@/hooks/use-word-status';
 import { useBookmarkVersion } from '@/hooks/use-bookmarks';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { isPageBookmarked, togglePageBookmark } from '@/lib/bookmarks';
+import { bulkSetPageWordStatus } from '@/lib/word-status';
 import { storage } from '@/lib/storage';
 import { useTheme } from '@/lib/theme';
 import WbwPage from '@/components/wbw-page';
@@ -30,7 +31,9 @@ export default function ReaderScreen() {
   const [layout, setLayout] = useStorage<ReaderLayout>('readerLayout', 'wbw');
   const [mode, setMode] = useStorage<ReaderMode>('readerMode', 'reading');
   const [language] = useStorage<Language>('language', 'en');
+  const [swipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const prevPageRef = useRef(initialPage);
   const [mushafContentHeight, setMushafContentHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(56);
 
@@ -72,11 +75,18 @@ export default function ReaderScreen() {
     ({ viewableItems }: { viewableItems: ViewToken<number>[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].item != null) {
         const page = viewableItems[0].item;
+        const leavingPage = prevPageRef.current;
+        prevPageRef.current = page;
         setCurrentPage(page);
         storage.set('lastReadPage', page);
+
+        // Apply swipe action to the page we just left (only when going forward, never in reading mode)
+        if (page > leavingPage && swipeAction !== 'none' && mode === 'learning') {
+          bulkSetPageWordStatus(leavingPage, 'new', swipeAction);
+        }
       }
     },
-    [],
+    [swipeAction, mode],
   );
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
