@@ -12,6 +12,7 @@ import { useStorage } from '@/hooks/use-storage';
 import { useTheme } from '@/lib/theme';
 import type { AudioState } from '@/lib/audio-player';
 import AyahPlayButtons from '@/components/ayah-play-buttons';
+import AyahBookmarkButton from '@/components/ayah-bookmark-button';
 import SurahBanner from '@/components/surah-banner';
 import BismillahBanner from '@/components/bismillah-banner';
 
@@ -123,10 +124,13 @@ export default function SentencePage({ page, mode, language, bottomPadding, page
             key={`${section.surah}:${section.verse}`}
             style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
           >
+            {/* Bookmark – top left */}
+            <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />
+
             <AyahText words={section.words} mode={mode} pageNumber={pageNumber} router={router} isPlayingAyah={isPlayingAyah} audio={audio} />
 
-            {/* Play controls */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            {/* Play controls – right aligned */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
               <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
             </View>
 

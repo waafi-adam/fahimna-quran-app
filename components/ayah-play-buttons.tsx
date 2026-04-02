@@ -1,4 +1,4 @@
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { playAyah, playFrom, stop } from '@/lib/audio-player';
@@ -24,12 +24,14 @@ export default function AyahPlayButtons({ surah, ayah, reciter }: Props) {
   }
 
   return (
-    <View style={{ flexDirection: 'row', gap: 10 }}>
-      <Pressable onPress={() => playAyah(reciter, surah, ayah)} hitSlop={8}>
-        <Ionicons name="play-circle-outline" size={20} color={colors.textMuted} />
+    <View style={{ flexDirection: 'row', gap: 12 }}>
+      <Pressable onPress={() => playAyah(reciter, surah, ayah)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+        <Ionicons name="play-circle-outline" size={18} color={colors.textMuted} />
+        <Text style={{ fontSize: 11, color: colors.textMuted }}>Play</Text>
       </Pressable>
-      <Pressable onPress={() => playFrom(reciter, surah, ayah)} hitSlop={8}>
-        <Ionicons name="play-forward-outline" size={20} color={colors.textMuted} />
+      <Pressable onPress={() => playFrom(reciter, surah, ayah)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+        <Ionicons name="play-forward-outline" size={18} color={colors.textMuted} />
+        <Text style={{ fontSize: 11, color: colors.textMuted }}>Play from here</Text>
       </Pressable>
     </View>
   );
