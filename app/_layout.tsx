@@ -65,6 +65,13 @@ function ThemedStack() {
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
+        <Stack.Screen
+          name="grammar"
+          options={{
+            title: 'Grammar',
+            headerBackButtonDisplayMode: 'minimal',
+          }}
+        />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="+not-found" />

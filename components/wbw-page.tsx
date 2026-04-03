@@ -1,9 +1,9 @@
 'use no memo';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { PageData, ReaderMode, Language } from '@/types/quran';
-import { getTranslation, isVerseMarker } from '@/lib/quran-data';
+import { getTranslation, isVerseMarker, getMorphology } from '@/lib/quran-data';
 import { getPageSections } from '@/lib/page-helpers';
 import { getWordStatus } from '@/lib/word-status';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
@@ -54,7 +54,23 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
   const { colors } = useTheme();
   const audio = useAudioPlayer();
   const [reciter] = useStorage('reciter', 'husary-murattal');
+  const [showGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
   const sections = getPageSections(page);
+
+  // Pre-compute POS labels when grammar labels setting is on
+  const posLabels = useMemo(() => {
+    if (!showGrammarLabels) return null;
+    const labels = new Map<number, string>();
+    for (const section of sections) {
+      if (section.type !== 'ayah') continue;
+      for (const word of section.words) {
+        if (isVerseMarker(word)) continue;
+        const m = getMorphology(word.s, word.v, word.w);
+        if (m) labels.set(word.id, m.posAr);
+      }
+    }
+    return labels;
+  }, [showGrammarLabels, sections]);
 
   // Pre-load translations for surahs on this page
   const translationCache = new Map<number, Map<number, string>>();
@@ -101,6 +117,7 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
                   mode={mode}
                   language={language}
                   isActiveWord={isPlayingAyah && audio.activeWordPos === word.w}
+                  posLabel={posLabels?.get(word.id)}
                   onPress={
                     isVerseMarker(word)
                       ? () => router.push(`/ayah-sheet?surah=${word.s}&ayah=${word.v}`)

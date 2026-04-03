@@ -113,6 +113,7 @@ export default function SettingsScreen() {
   const [language, setLanguage] = useStorage<Language>('language', 'en');
   const [propagation, setPropagation] = useStorage<PropagationMode>('propagation', 'lemma');
   const [swipeAction, setSwipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
+  const [showGrammarLabels, setShowGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
   const { colors, mode: themeMode, setMode: setThemeMode } = useTheme();
 
   const confirmReset = () => {
@@ -220,6 +221,27 @@ export default function SettingsScreen() {
             colors={colors}
           />
         ))}
+      </View>
+
+      {/* Grammar */}
+      <SectionHeader label="GRAMMAR" colors={colors} />
+      <View style={{ paddingHorizontal: 20, gap: 8 }}>
+        <RadioCard
+          selected={showGrammarLabels}
+          onPress={() => setShowGrammarLabels(true)}
+          icon="language-outline"
+          title="Show Grammar Labels"
+          subtitle="Display POS tags under words in WBW layout"
+          colors={colors}
+        />
+        <RadioCard
+          selected={!showGrammarLabels}
+          onPress={() => setShowGrammarLabels(false)}
+          icon="eye-off-outline"
+          title="Hide Grammar Labels"
+          subtitle="Only show meanings under words"
+          colors={colors}
+        />
       </View>
 
       {/* Data */}

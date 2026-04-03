@@ -3,11 +3,12 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatus } from '@/hooks/use-word-status';
-import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount } from '@/lib/quran-data';
+import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount, getMorphology } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
 import { useTheme, type Colors } from '@/lib/theme';
 import TabPager from '@/components/tab-pager';
+import WordSegments from '@/components/word-segments';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
 
 const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
@@ -140,6 +141,7 @@ export default function WordSheet() {
   const root = w.ri != null ? getRootById(w.ri) : undefined;
   const lemma = w.li != null ? getLemmaById(w.li) : undefined;
   const isLearning = mode === 'learning';
+  const morphology = getMorphology(w.s, w.v, w.w);
 
   // Pre-compute forms for each tab
   const rootForms = root ? getRootForms(root.id) : [];
@@ -246,6 +248,37 @@ export default function WordSheet() {
         <Text style={{ fontSize: 12, color: colors.textFaint, marginBottom: 4 }}>Meaning</Text>
         <Text style={{ fontSize: 18, color: colors.text }}>{meaning}</Text>
       </View>
+
+      {/* Word Analysis (تحليل الكلمة) */}
+      {morphology && morphology.seg.length > 0 && (
+        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16, gap: 12 }}>
+          <Text style={{ fontSize: 12, color: colors.textFaint }}>تحليل الكلمة · Word Analysis</Text>
+          <WordSegments segments={morphology.seg} colors={colors} />
+          <Pressable
+            onPress={() => {
+              router.dismiss();
+              setTimeout(() => {
+                router.push(`/grammar?surah=${w.s}&ayah=${w.v}&word=${w.w}`);
+              }, 100);
+            }}
+            style={{
+              backgroundColor: colors.bgTertiary,
+              borderRadius: 8,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <Text style={{ fontSize: 13, color: colors.accent, fontWeight: '500' }}>
+              إعراب وصرف الكلمة
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.accent }}>→</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Derived forms with swipeable tabs */}
       {availableTabs.length > 0 && (
