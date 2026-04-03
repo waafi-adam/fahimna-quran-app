@@ -1,9 +1,11 @@
 'use no memo';
-import { View, Text, SectionList, Pressable } from 'react-native';
+import { View, Text, SectionList, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getBookmarks, removeBookmark, type Bookmark } from '@/lib/bookmarks';
 import { useBookmarkVersion } from '@/hooks/use-bookmarks';
+import { getReadingHistory, type ReadingHistoryEntry } from '@/lib/reading-history';
+import { useReadingHistoryVersion } from '@/hooks/use-reading-history';
 import { getChapter } from '@/lib/quran-data';
 import { useTheme } from '@/lib/theme';
 
@@ -11,6 +13,94 @@ type BookmarkSection = {
   title: string;
   data: Bookmark[];
 };
+
+function formatRelativeTime(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
+function RecentlyReadCard({ entry }: { entry: ReadingHistoryEntry }) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const surahNames = getSurahNamesForPage(entry.page);
+
+  return (
+    <Pressable
+      onPress={() => router.push(`/page/${entry.page}`)}
+      style={({ pressed }) => ({
+        width: 110,
+        padding: 10,
+        marginRight: 10,
+        borderRadius: 12,
+        backgroundColor: pressed ? colors.pressed : colors.bgSecondary,
+        borderWidth: 0.5,
+        borderColor: colors.borderLight,
+      })}
+    >
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          backgroundColor: colors.accentBg,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <Ionicons name="time-outline" size={14} color={colors.accent} />
+      </View>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={1}>
+        Page {entry.page}
+      </Text>
+      <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }} numberOfLines={1}>
+        {surahNames}
+      </Text>
+      <Text style={{ fontSize: 10, color: colors.textFaint, marginTop: 4 }}>
+        {formatRelativeTime(entry.timestamp)}
+      </Text>
+    </Pressable>
+  );
+}
+
+function RecentlyReadStrip({ history }: { history: ReadingHistoryEntry[] }) {
+  const { colors } = useTheme();
+
+  if (history.length === 0) return null;
+
+  return (
+    <View style={{ paddingTop: 12, paddingBottom: 8 }}>
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: '600',
+          color: colors.textMuted,
+          paddingHorizontal: 16,
+          marginBottom: 10,
+        }}
+      >
+        Recently Read
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
+        {history.map((entry) => (
+          <RecentlyReadCard key={`r:${entry.page}`} entry={entry} />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
 
 function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
   const router = useRouter();
@@ -111,8 +201,13 @@ function EmptyState() {
 export default function BookmarksTab() {
   const { colors } = useTheme();
   useBookmarkVersion(); // re-render on bookmark changes
+  useReadingHistoryVersion(); // re-render on reading history changes
 
   const bookmarks = getBookmarks();
+  const readingHistory = getReadingHistory()
+    .slice()
+    .sort((a, b) => b.timestamp - a.timestamp);
+
   const pageBookmarks = bookmarks
     .filter((b) => b.sura == null)
     .sort((a, b) => b.timestamp - a.timestamp);
@@ -120,7 +215,7 @@ export default function BookmarksTab() {
     .filter((b) => b.sura != null)
     .sort((a, b) => b.timestamp - a.timestamp);
 
-  if (bookmarks.length === 0) {
+  if (bookmarks.length === 0 && readingHistory.length === 0) {
     return <EmptyState />;
   }
 
@@ -140,6 +235,7 @@ export default function BookmarksTab() {
       }
       contentInsetAdjustmentBehavior="automatic"
       stickySectionHeadersEnabled={false}
+      ListHeaderComponent={<RecentlyReadStrip history={readingHistory} />}
       renderSectionHeader={({ section }) => (
         <View style={{ backgroundColor: colors.bgSecondary, paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
           <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textMuted }}>

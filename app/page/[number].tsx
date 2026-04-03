@@ -12,6 +12,7 @@ import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { isPageBookmarked, togglePageBookmark } from '@/lib/bookmarks';
 import { bulkSetPageWordStatus } from '@/lib/word-status';
 import { storage } from '@/lib/storage';
+import { recordPageVisit } from '@/lib/reading-history';
 import { useTheme } from '@/lib/theme';
 import WbwPage from '@/components/wbw-page';
 import SentencePage from '@/components/sentence-page';
@@ -79,6 +80,7 @@ export default function ReaderScreen() {
         prevPageRef.current = page;
         setCurrentPage(page);
         storage.set('lastReadPage', page);
+        recordPageVisit(page);
 
         // Apply swipe action to the page we just left (only when going forward, never in reading mode)
         if (page > leavingPage && swipeAction !== 'none' && mode === 'learning') {
