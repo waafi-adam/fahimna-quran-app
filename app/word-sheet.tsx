@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
@@ -55,17 +55,6 @@ function FormsTabContent({
   colors: Colors;
   onFormPress: (form: DerivedForm) => void;
 }) {
-  const scrollRef = useRef<ScrollView>(null);
-  const currentIndex = forms.findIndex((f) => f[0] === currentArabic);
-
-  useEffect(() => {
-    if (currentIndex > 0) {
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: currentIndex * FORM_ROW_HEIGHT, animated: false });
-      }, 50);
-    }
-  }, [currentIndex]);
-
   return (
     <View style={{ flex: 1 }}>
       {/* Header info */}
@@ -80,12 +69,8 @@ function FormsTabContent({
         </View>
       </View>
 
-      {/* Scrollable forms */}
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled
-      >
+      {/* Forms list (no inner ScrollView — outer ScrollView handles scrolling) */}
+      <View style={{ flex: 1, overflow: 'hidden' }}>
         {forms.map((form) => {
           const isCurrentForm = form[0] === currentArabic;
           return (
@@ -116,7 +101,7 @@ function FormsTabContent({
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
