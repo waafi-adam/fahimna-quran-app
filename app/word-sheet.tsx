@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatus } from '@/hooks/use-word-status';
@@ -68,8 +68,8 @@ function FormsTabContent({
         </View>
       </View>
 
-      {/* Forms list (no inner ScrollView — outer ScrollView handles scrolling) */}
-      <View style={{ flex: 1, overflow: 'hidden' }}>
+      {/* Forms list — nested ScrollView so the list is scrollable within its fixed height */}
+      <ScrollView style={{ flex: 1 }} nestedScrollEnabled>
         {forms.map((form) => {
           const isCurrentForm = form[0] === currentArabic;
           return (
@@ -100,7 +100,7 @@ function FormsTabContent({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
