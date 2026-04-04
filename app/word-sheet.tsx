@@ -186,7 +186,7 @@ export default function WordSheet() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }} style={{ backgroundColor: colors.bg }}>
+    <ScrollView contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }} style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Arabic word */}
       <Text
         style={{

@@ -104,8 +104,16 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
             key={`${section.surah}:${section.verse}`}
             style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
           >
-            {/* Bookmark – top left */}
-            <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />
+            {/* Bookmark top-left, ayah menu top-right */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />
+              <Pressable
+                onPress={() => router.push(`/ayah-sheet?surah=${section.surah}&ayah=${section.verse}`)}
+                hitSlop={8}
+              >
+                <Text style={{ fontSize: 18, color: colors.textMuted, fontWeight: '700' }}>···</Text>
+              </Pressable>
+            </View>
 
             {/* Word cards – RTL flow */}
             <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-start' }}>
@@ -127,22 +135,9 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
               ))}
             </View>
 
-            {/* Play controls + ayah menu – right aligned */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4, paddingHorizontal: 4, gap: 4 }}>
+            {/* Play controls – right aligned */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4, paddingHorizontal: 4 }}>
               <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
-              <Pressable
-                onPress={() => router.push(`/ayah-sheet?surah=${section.surah}&ayah=${section.verse}`)}
-                hitSlop={6}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 16, color: colors.textMuted, fontWeight: '700', lineHeight: 16 }}>···</Text>
-              </Pressable>
             </View>
 
             {/* Ayah translation */}
