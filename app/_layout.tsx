@@ -35,7 +35,7 @@ function ThemedStack() {
           name="word-sheet"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.55, 0.92],
+            sheetAllowedDetents: [0.92],
             sheetGrabberVisible: true,
             headerShown: false,
           }}
