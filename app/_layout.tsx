@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -34,8 +35,8 @@ function ThemedStack() {
         <Stack.Screen
           name="word-sheet"
           options={{
-            presentation: 'formSheet',
-            sheetAllowedDetents: [0.5, 0.85],
+            presentation: Platform.OS === 'android' ? 'modal' : 'formSheet',
+            sheetAllowedDetents: [0.92],
             sheetGrabberVisible: true,
             headerShown: false,
           }}

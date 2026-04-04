@@ -1,0 +1,53 @@
+﻿pid	pos	pos_ar	pos_en	color1	color	pos_ar1
+0	N	اسم	Noun	Lime	cornflowerblue	اسم
+1	PN	اسم علم	Proper noun	LimeGreen	navy	علم
+2	ADJ	صفة	Adjective	DeepSkyBlue	purple	نعت
+3	IMPN	اسم فعل أمر	Imperative verbal noun	DodgerBlue	purple	IMPN
+4	PRON	ضمير	Personal pronoun	cornflowerblue	slategray	ضمير
+5	DEM	اسم اشارة	Demonstrative pronoun	SpringGreen	brown	اسم إشارة
+6	REL	اسم موصول	Relative pronoun	MediumSeaGreen	gold	اسم موصول
+7	T	ظرف زمان	Time adverb	FireBrick	orange	ظرف زمان
+8	LOC	ظرف مكان	Location adverb	DarkRed	orange	ظرف مكان
+9	V	فعل	Verb	Blue	seagreen	فعل
+10	P	حرف جر	Preposition	Red	firebrick	حرف جر
+11	EMPH	حرف توكيد	Emphatic lām prefix	DeepPink	purple	لام (أو نون المثقلة؟) التوكيد
+12	IMPV	حرف امر	Imperative lām prefix	MediumVioletRed	purple	لام الامر
+13	PRP	حرف تعليل	Purpose lām prefix	PaleVioletRed	gold	لام التعليل
+14	CONJ	حرف عطف	Coordinating conjunction	Crimson	navy	حرف عطف
+15	SUB	حرف مصدري	Subordinating conjunction	Coral	gold	حرف مصدري
+16	ACC	حرف نصب	Accusative particle	Tomato	purple	حرف نصب
+17	AMD	حرف استدراك	Amendment particle	OrangeRed	purple	حرف استدراك
+18	ANS	حرف جواب	Answer particle	DarkOrange	purple	حرف جواب
+19	AVR	حرف ردع	Aversion particle	Orange	purple	حرف ردع
+20	CAUS	حرف سببية	Particle of cause	Fuchsia	purple	حرف سببية
+21	CERT	حرف تحقيق	Particle of certainty	Magenta	purple	حرف تحقيق
+22	CIRC	حرف حال	Circumstantial particle	MediumOrchid	navy	حرف حال
+23	COM	حرف معية	Comitative particle	MediumPurple	navy	واو المعية
+24	COND	حرف شرط	Conditional particle	Amethyst	orange	شرطية
+25	EQ	حرف تسوية	Equalization particle	BlueViolet	purple	حرف تسوية
+26	EXH	حرف تحضيض	Exhortation particle	DarkViolet	purple	حرف تحضيض
+27	EXL	حرف تفصيل	Explanation particle	DarkOrchid	purple	حرف تفصيل
+28	EXP	أداة استثناء	Exceptive particle	Gold	purple	أداة استثناء
+29	FUT	حرف استقبال	Future particle	Yellow	purple	حرف استقبال
+30	INC	حرف ابتداء	Inceptive particle	LightCoral	purple	حرف ابتداء
+31	INT	حرف تفسير	Particle of interpretation	Salmon	purple	حرف تفسير
+32	INTG	حرف استفهام	Interogative particle	DarkSalmon	rose	استفهامية
+33	NEG	حرف نفي	Negative particle	LightSalmon	red	حرف نفي
+34	PREV	حرف كاف	Preventive particle	SeaGreen	orange	حرف كاف
+35	PRO	حرف نهي	Prohibition particle	ForestGreen	red	حرف نهي
+36	REM	حرف استئنافية	Resumption particle	Green	navy	حرف استئنافية
+37	RES	أداة حصر	Restriction particle	DarkGreen	purple	أداة حصر
+38	RET	حرف اضراب	Retraction particle	Khaki	purple	حرف إضراب
+39	RSLT	حرف واقع في جواب الشرط	Result particle	DarkKhaki	navy	حرف واقع في جواب الشرط
+40	SUP	حرف زائد	Supplemental particle	Violet	purple	حرف زائد
+41	SUR	حرف فجاءة	Surprise particle	Orchid	purple	حرف فجاءة
+42	VOC	حرف نداء	Vocative particle	Purple	green	حرف نداء
+43	INL	حروف مقطعة	Quranic initials	SlateBlue	orange	حروف مقطعة
+44	DET	أداة تعريف	Determiner	DarkSlateBlue	gray	أداة تعريف
+45	NS	جملة اسمية	Nominal sentence	Green	navy	جملة اسمية
+46	VS	جملة فعلية	Verbal sentence	Blue	seagreen	جملة فعلية
+47	CS	جملة شرط	Conditional sentence	ForestGreen	orange	جملة شرطية
+48	PP	جار ومجرور	Prepositional phrase	DarkRed	darkred	جار ومجرور
+49	SC	تأويل مصدر	Subordinate clause	Purple	gold	مصدر مؤول
+50	S	جملة	Sentence	Orchid	navy	جملة
+51	_	_	_	black	black	_

@@ -235,3 +235,56 @@ export type DoubleTapAction = 'learning' | 'known' | 'cycle';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type SwipeAction = 'none' | 'known' | 'learning';
+
+// === Grammar / Morphology (morphology/{1-114}.json) ===
+
+/** A single morphological segment of a word (prefix, stem, or suffix) */
+export type WordSegment = {
+  /** Arabic text of this segment */
+  ar: string;
+  /** Arabic grammar label (e.g., حرف جر) */
+  posAr: string;
+  /** English grammar label (e.g., Preposition) */
+  posEn: string;
+  /** Segment type */
+  type: 'prefix' | 'stem' | 'suffix';
+};
+
+/** Full morphology + إعراب entry for a single word */
+export type WordMorphology = {
+  /** Segmentation into prefix/stem/suffix parts */
+  seg: WordSegment[];
+  /** Part of speech (English) */
+  pos: string;
+  /** Part of speech (Arabic) */
+  posAr: string;
+  /** Morphological pattern / وزن */
+  pattern?: string;
+  /** Gender: m / f */
+  gender?: string;
+  /** Number: s (singular) / d (dual) / p (plural) */
+  number?: string;
+  /** Person: 1 / 2 / 3 */
+  person?: string;
+  /** Grammatical case: nom / acc / gen */
+  case?: string;
+  /** Arabic case label (مرفوع / منصوب / مجرور) */
+  caseAr?: string;
+  /** Verb mood: ind / sub / jus */
+  mood?: string;
+  /** Voice: act / pass */
+  voice?: string;
+  /** State: def / indef / const */
+  state?: string;
+  /** Derivation type (e.g., verbal noun, active participle) */
+  derivation?: string;
+  /** Full إعراب sentence in Arabic */
+  irab?: string;
+  /** Arabic syntactic role (e.g., فاعل, مبتدأ) */
+  syntacticRole?: string;
+  /** English syntactic role (e.g., Subject, Predicate) */
+  syntacticRoleEn?: string;
+};
+
+/** Per-surah morphology file: keyed by "ayah:word" */
+export type SurahMorphology = Record<string, WordMorphology>;

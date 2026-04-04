@@ -1,19 +1,21 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatus } from '@/hooks/use-word-status';
-import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount } from '@/lib/quran-data';
+import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount, getMorphology } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
 import { useTheme, type Colors } from '@/lib/theme';
-import TabPager from '@/components/tab-pager';
+import WordSegments from '@/components/word-segments';
+import MorphologyTable from '@/components/morphology-table';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
 
 const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
 const FORM_ROW_HEIGHT = 44;
 const HEADER_HEIGHT = 48;
-const PAGER_HEIGHT = HEADER_HEIGHT + FORM_ROW_HEIGHT * 5;
+const COLLAPSED_ROWS = 3;
+const EXPANDED_ROWS = 8;
 
 type FormsTab = 'exact' | 'lemma' | 'root';
 
@@ -52,17 +54,6 @@ function FormsTabContent({
   colors: Colors;
   onFormPress: (form: DerivedForm) => void;
 }) {
-  const scrollRef = useRef<ScrollView>(null);
-  const currentIndex = forms.findIndex((f) => f[0] === currentArabic);
-
-  useEffect(() => {
-    if (currentIndex > 0) {
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: currentIndex * FORM_ROW_HEIGHT, animated: false });
-      }, 50);
-    }
-  }, [currentIndex]);
-
   return (
     <View style={{ flex: 1 }}>
       {/* Header info */}
@@ -77,12 +68,8 @@ function FormsTabContent({
         </View>
       </View>
 
-      {/* Scrollable forms */}
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled
-      >
+      {/* Forms list — nested ScrollView so the list is scrollable within its fixed height */}
+      <ScrollView style={{ flex: 1 }} nestedScrollEnabled>
         {forms.map((form) => {
           const isCurrentForm = form[0] === currentArabic;
           return (
@@ -140,6 +127,7 @@ export default function WordSheet() {
   const root = w.ri != null ? getRootById(w.ri) : undefined;
   const lemma = w.li != null ? getLemmaById(w.li) : undefined;
   const isLearning = mode === 'learning';
+  const morphology = getMorphology(w.s, w.v, w.w);
 
   // Pre-compute forms for each tab
   const rootForms = root ? getRootForms(root.id) : [];
@@ -156,6 +144,7 @@ export default function WordSheet() {
   if (rootForms.length > 0) availableTabs.push('root');
 
   const [tabIndex, setTabIndex] = useState(0);
+  const [formsExpanded, setFormsExpanded] = useState(false);
 
   const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
     exact: { forms: exactForms, arabic: w.a, total: exactCount },
@@ -164,6 +153,16 @@ export default function WordSheet() {
   };
 
   const tabLabels: Record<FormsTab, string> = { exact: 'Exact', lemma: 'Lemma', root: 'Root' };
+
+  // Determine if expand toggle is needed (any tab has more forms than collapsed rows)
+  const maxForms = Math.max(
+    exactForms.length,
+    lemmaForms.length,
+    rootForms.length,
+  );
+  const showExpandToggle = maxForms > COLLAPSED_ROWS;
+  const visibleRows = formsExpanded ? EXPANDED_ROWS : COLLAPSED_ROWS;
+  const pagerHeight = HEADER_HEIGHT + FORM_ROW_HEIGHT * visibleRows;
 
   const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
     { key: 'new', label: 'New', bg: colors.statusNewBg, border: colors.statusNewBorder },
@@ -186,7 +185,7 @@ export default function WordSheet() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }} style={{ backgroundColor: colors.bg }}>
+    <ScrollView contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }} style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Arabic word */}
       <Text
         style={{
@@ -247,10 +246,43 @@ export default function WordSheet() {
         <Text style={{ fontSize: 18, color: colors.text }}>{meaning}</Text>
       </View>
 
+      {/* Word Analysis (تحليل الكلمة) */}
+      {morphology && morphology.seg.length > 0 && (
+        <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16, gap: 12 }}>
+          <Text style={{ fontSize: 12, color: colors.textFaint }}>تحليل الكلمة · Word Analysis</Text>
+
+          {/* Syntactic role badge + إعراب */}
+          {(morphology.syntacticRole || morphology.caseAr) && (
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <View style={{ backgroundColor: colors.accentBg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 12, color: colors.accent, fontWeight: '600' }}>
+                    {morphology.syntacticRole || morphology.caseAr}
+                  </Text>
+                </View>
+                {(morphology.syntacticRoleEn || morphology.pos) && (
+                  <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                    {morphology.syntacticRoleEn || morphology.pos}
+                  </Text>
+                )}
+              </View>
+              {morphology.irab && (
+                <Text style={{ fontSize: 13, color: colors.text, lineHeight: 20, textAlign: 'right' }}>
+                  {morphology.irab}
+                </Text>
+              )}
+            </View>
+          )}
+
+          <WordSegments segments={morphology.seg} colors={colors} />
+          <MorphologyTable morphology={morphology} colors={colors} />
+        </View>
+      )}
+
       {/* Derived forms with swipeable tabs */}
       {availableTabs.length > 0 && (
         <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: 'hidden' }}>
-          {/* Tab bar */}
+          {/* Tab bar with expand toggle */}
           <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border }}>
             {availableTabs.map((tab, i) => {
               const isActive = i === tabIndex;
@@ -278,24 +310,29 @@ export default function WordSheet() {
                 </Pressable>
               );
             })}
+            {showExpandToggle && (
+              <Pressable
+                onPress={() => setFormsExpanded(!formsExpanded)}
+                style={{ paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 12, color: colors.accent }}>
+                  {formsExpanded ? '▲' : '▼'}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
-          {/* Swipeable pager with fixed height */}
-          <View style={{ height: PAGER_HEIGHT }}>
-            <TabPager selectedIndex={tabIndex} onIndexChange={setTabIndex}>
-              {availableTabs.map((tab) => (
-                <FormsTabContent
-                  key={tab}
-                  forms={tabData[tab].forms}
-                  arabic={tabData[tab].arabic}
-                  total={tabData[tab].total}
-                  currentArabic={w.a}
-                  language={language}
-                  colors={colors}
-                  onFormPress={handleFormPress}
-                />
-              ))}
-            </TabPager>
+          {/* Forms content (no PagerView — avoids Android gesture conflict with ScrollView) */}
+          <View style={{ height: pagerHeight }}>
+            <FormsTabContent
+              forms={tabData[availableTabs[tabIndex]].forms}
+              arabic={tabData[availableTabs[tabIndex]].arabic}
+              total={tabData[availableTabs[tabIndex]].total}
+              currentArabic={w.a}
+              language={language}
+              colors={colors}
+              onFormPress={handleFormPress}
+            />
           </View>
         </View>
       )}

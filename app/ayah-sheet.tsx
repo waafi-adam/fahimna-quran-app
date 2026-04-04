@@ -117,6 +117,28 @@ export default function AyahSheet() {
         )}
       </View>
 
+      {/* Grammar */}
+      <Pressable
+        onPress={() => {
+          router.dismiss();
+          router.push(`/ayah/${surahNum}/${ayahNum}?tab=irab`);
+        }}
+        style={{
+          backgroundColor: colors.bgSecondary,
+          borderRadius: 12,
+          borderCurve: 'continuous',
+          padding: 14,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <Ionicons name="language-outline" size={20} color={colors.textSecondary} />
+        <Text style={{ fontSize: 15, color: colors.text, fontWeight: '500' }}>
+          إعراب الآية · Sentence Grammar
+        </Text>
+      </Pressable>
+
       {/* Go to Ayah Detail */}
       <Pressable
         onPress={() => {

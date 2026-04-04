@@ -12,9 +12,10 @@ type Props = {
   language: Language;
   onPress?: () => void;
   isActiveWord?: boolean;
+  posLabel?: string;
 };
 
-function WordCard({ word, status, mode, language, onPress, isActiveWord }: Props) {
+function WordCard({ word, status, mode, language, onPress, isActiveWord, posLabel }: Props) {
   const { colors } = useTheme();
 
   const STATUS_BG: Record<WordStatus, string | undefined> = {
@@ -73,6 +74,19 @@ function WordCard({ word, status, mode, language, onPress, isActiveWord }: Props
           }}
         >
           {meaning}
+        </Text>
+      )}
+      {posLabel && (
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 8,
+            color: colors.textFaint,
+            textAlign: 'center',
+            marginTop: 1,
+          }}
+        >
+          {posLabel}
         </Text>
       )}
     </Pressable>
