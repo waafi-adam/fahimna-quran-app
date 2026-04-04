@@ -7,7 +7,6 @@ import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLem
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
 import { useTheme, type Colors } from '@/lib/theme';
-import TabPager from '@/components/tab-pager';
 import WordSegments from '@/components/word-segments';
 import MorphologyTable from '@/components/morphology-table';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
@@ -323,22 +322,17 @@ export default function WordSheet() {
             )}
           </View>
 
-          {/* Swipeable pager with dynamic height */}
+          {/* Forms content (no PagerView — avoids Android gesture conflict with ScrollView) */}
           <View style={{ height: pagerHeight }}>
-            <TabPager selectedIndex={tabIndex} onIndexChange={setTabIndex}>
-              {availableTabs.map((tab) => (
-                <FormsTabContent
-                  key={tab}
-                  forms={tabData[tab].forms}
-                  arabic={tabData[tab].arabic}
-                  total={tabData[tab].total}
-                  currentArabic={w.a}
-                  language={language}
-                  colors={colors}
-                  onFormPress={handleFormPress}
-                />
-              ))}
-            </TabPager>
+            <FormsTabContent
+              forms={tabData[availableTabs[tabIndex]].forms}
+              arabic={tabData[availableTabs[tabIndex]].arabic}
+              total={tabData[availableTabs[tabIndex]].total}
+              currentArabic={w.a}
+              language={language}
+              colors={colors}
+              onFormPress={handleFormPress}
+            />
           </View>
         </View>
       )}
