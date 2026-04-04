@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import RenderHtml from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
 import { useStorage } from '@/hooks/use-storage';
@@ -37,7 +37,6 @@ export default function AyahScreen() {
     tab?: string;
     word?: string;
   }>();
-  const router = useRouter();
   const [language] = useStorage<Language>('language', 'en');
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -149,9 +148,6 @@ export default function AyahScreen() {
               morphologyMap={ayahMorphology}
               initialWordPos={initialWord ? Number(initialWord) : undefined}
               colors={colors}
-              onWordPress={(w) => {
-                router.push(`/grammar?surah=${surahNum}&ayah=${ayahNum}&word=${w.w}`);
-              }}
             />
           </View>
         )}

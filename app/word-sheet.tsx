@@ -9,12 +9,13 @@ import { setWordStatus } from '@/lib/word-status';
 import { useTheme, type Colors } from '@/lib/theme';
 import TabPager from '@/components/tab-pager';
 import WordSegments from '@/components/word-segments';
+import MorphologyTable from '@/components/morphology-table';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
 
 const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
 const FORM_ROW_HEIGHT = 44;
 const HEADER_HEIGHT = 48;
-const PAGER_HEIGHT = HEADER_HEIGHT + FORM_ROW_HEIGHT * 5;
+const PAGER_HEIGHT = HEADER_HEIGHT + FORM_ROW_HEIGHT * 3;
 
 type FormsTab = 'exact' | 'lemma' | 'root';
 
@@ -254,29 +255,7 @@ export default function WordSheet() {
         <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16, gap: 12 }}>
           <Text style={{ fontSize: 12, color: colors.textFaint }}>تحليل الكلمة · Word Analysis</Text>
           <WordSegments segments={morphology.seg} colors={colors} />
-          <Pressable
-            onPress={() => {
-              router.dismiss();
-              setTimeout(() => {
-                router.push(`/grammar?surah=${w.s}&ayah=${w.v}&word=${w.w}`);
-              }, 100);
-            }}
-            style={{
-              backgroundColor: colors.bgTertiary,
-              borderRadius: 8,
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-            }}
-          >
-            <Text style={{ fontSize: 13, color: colors.accent, fontWeight: '500' }}>
-              إعراب وصرف الكلمة
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.accent }}>→</Text>
-          </Pressable>
+          <MorphologyTable morphology={morphology} colors={colors} />
         </View>
       )}
 
