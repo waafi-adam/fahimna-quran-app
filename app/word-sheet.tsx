@@ -15,7 +15,8 @@ import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm
 const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
 const FORM_ROW_HEIGHT = 44;
 const HEADER_HEIGHT = 48;
-const PAGER_HEIGHT = HEADER_HEIGHT + FORM_ROW_HEIGHT * 3;
+const COLLAPSED_ROWS = 3;
+const EXPANDED_ROWS = 8;
 
 type FormsTab = 'exact' | 'lemma' | 'root';
 
@@ -159,6 +160,7 @@ export default function WordSheet() {
   if (rootForms.length > 0) availableTabs.push('root');
 
   const [tabIndex, setTabIndex] = useState(0);
+  const [formsExpanded, setFormsExpanded] = useState(false);
 
   const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
     exact: { forms: exactForms, arabic: w.a, total: exactCount },
@@ -167,6 +169,16 @@ export default function WordSheet() {
   };
 
   const tabLabels: Record<FormsTab, string> = { exact: 'Exact', lemma: 'Lemma', root: 'Root' };
+
+  // Determine if expand toggle is needed (any tab has more forms than collapsed rows)
+  const maxForms = Math.max(
+    exactForms.length,
+    lemmaForms.length,
+    rootForms.length,
+  );
+  const showExpandToggle = maxForms > COLLAPSED_ROWS;
+  const visibleRows = formsExpanded ? EXPANDED_ROWS : COLLAPSED_ROWS;
+  const pagerHeight = HEADER_HEIGHT + FORM_ROW_HEIGHT * visibleRows;
 
   const STATUS_OPTIONS: { key: WordStatus; label: string; bg: string; border: string }[] = [
     { key: 'new', label: 'New', bg: colors.statusNewBg, border: colors.statusNewBorder },
@@ -189,7 +201,7 @@ export default function WordSheet() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }} style={{ backgroundColor: colors.bg }}>
+    <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }} style={{ backgroundColor: colors.bg }}>
       {/* Arabic word */}
       <Text
         style={{
@@ -254,6 +266,30 @@ export default function WordSheet() {
       {morphology && morphology.seg.length > 0 && (
         <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, padding: 16, gap: 12 }}>
           <Text style={{ fontSize: 12, color: colors.textFaint }}>تحليل الكلمة · Word Analysis</Text>
+
+          {/* Syntactic role badge + إعراب */}
+          {(morphology.syntacticRole || morphology.caseAr) && (
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <View style={{ backgroundColor: colors.accentBg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 12, color: colors.accent, fontWeight: '600' }}>
+                    {morphology.syntacticRole || morphology.caseAr}
+                  </Text>
+                </View>
+                {(morphology.syntacticRoleEn || morphology.pos) && (
+                  <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                    {morphology.syntacticRoleEn || morphology.pos}
+                  </Text>
+                )}
+              </View>
+              {morphology.irab && (
+                <Text style={{ fontSize: 13, color: colors.text, lineHeight: 20, textAlign: 'right' }}>
+                  {morphology.irab}
+                </Text>
+              )}
+            </View>
+          )}
+
           <WordSegments segments={morphology.seg} colors={colors} />
           <MorphologyTable morphology={morphology} colors={colors} />
         </View>
@@ -262,7 +298,7 @@ export default function WordSheet() {
       {/* Derived forms with swipeable tabs */}
       {availableTabs.length > 0 && (
         <View style={{ backgroundColor: colors.bgSecondary, borderRadius: 12, overflow: 'hidden' }}>
-          {/* Tab bar */}
+          {/* Tab bar with expand toggle */}
           <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border }}>
             {availableTabs.map((tab, i) => {
               const isActive = i === tabIndex;
@@ -290,10 +326,20 @@ export default function WordSheet() {
                 </Pressable>
               );
             })}
+            {showExpandToggle && (
+              <Pressable
+                onPress={() => setFormsExpanded(!formsExpanded)}
+                style={{ paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 12, color: colors.accent }}>
+                  {formsExpanded ? '▲' : '▼'}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
-          {/* Swipeable pager with fixed height */}
-          <View style={{ height: PAGER_HEIGHT }}>
+          {/* Swipeable pager with dynamic height */}
+          <View style={{ height: pagerHeight }}>
             <TabPager selectedIndex={tabIndex} onIndexChange={setTabIndex}>
               {availableTabs.map((tab) => (
                 <FormsTabContent

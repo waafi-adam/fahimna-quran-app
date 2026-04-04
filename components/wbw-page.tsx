@@ -127,9 +127,22 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
               ))}
             </View>
 
-            {/* Play controls – right aligned */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4, paddingHorizontal: 4 }}>
+            {/* Play controls + ayah menu – right aligned */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4, paddingHorizontal: 4, gap: 4 }}>
               <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
+              <Pressable
+                onPress={() => router.push(`/ayah-sheet?surah=${section.surah}&ayah=${section.verse}`)}
+                hitSlop={6}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 16, color: colors.textMuted, fontWeight: '700', lineHeight: 16 }}>···</Text>
+              </Pressable>
             </View>
 
             {/* Ayah translation */}
