@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
 import { useWordStatus } from '@/hooks/use-word-status';
@@ -155,7 +156,13 @@ export default function WordSheet() {
   if (lemmaForms.length > 0) availableTabs.push('lemma');
   if (rootForms.length > 0) availableTabs.push('root');
 
-  const [tabIndex, setTabIndex] = useState(0);
+  // Default to lemma, then root, then exact
+  const defaultTab: FormsTab = lemmaForms.length > 0 ? 'lemma' : rootForms.length > 0 ? 'root' : 'exact';
+  const [tabIndex, setTabIndex] = useState(() => Math.max(0, availableTabs.indexOf(defaultTab)));
+  const [formsExpanded, setFormsExpanded] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const swiping = useRef(false);
 
   const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
     exact: { forms: exactForms, arabic: w.a, total: exactCount },
@@ -178,6 +185,7 @@ export default function WordSheet() {
 
   const handleFormPress = useCallback(
     (form: DerivedForm) => {
+      if (swiping.current) return;
       router.push(
         `/word-usages?arabic=${encodeURIComponent(form[0])}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}`,
       );
@@ -278,25 +286,56 @@ export default function WordSheet() {
                 </Pressable>
               );
             })}
+            {showExpandToggle && (
+              <Pressable
+                onPress={() => {
+                  const expanding = !formsExpanded;
+                  setFormsExpanded(expanding);
+                  if (expanding) {
+                    requestAnimationFrame(() => {
+                      scrollRef.current?.scrollToEnd({ animated: true });
+                    });
+                  }
+                }}
+                style={{ paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 12, color: colors.accent }}>
+                  {formsExpanded ? '▲' : '▼'}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
-          {/* Swipeable pager with fixed height */}
-          <View style={{ height: PAGER_HEIGHT }}>
-            <TabPager selectedIndex={tabIndex} onIndexChange={setTabIndex}>
-              {availableTabs.map((tab) => (
-                <FormsTabContent
-                  key={tab}
-                  forms={tabData[tab].forms}
-                  arabic={tabData[tab].arabic}
-                  total={tabData[tab].total}
-                  currentArabic={w.a}
-                  language={language}
-                  colors={colors}
-                  onFormPress={handleFormPress}
-                />
-              ))}
-            </TabPager>
-          </View>
+          {/* Forms content — swipe left/right to change tabs */}
+          <GestureDetector gesture={Gesture.Pan()
+            .activeOffsetX([-20, 20])
+            .failOffsetY([-10, 10])
+            .onStart(() => { swiping.current = true; })
+            .onEnd((e) => {
+              if (e.velocityX < -300 && tabIndex < availableTabs.length - 1) {
+                setTabIndex(tabIndex + 1);
+              } else if (e.velocityX > 300 && tabIndex > 0) {
+                setTabIndex(tabIndex - 1);
+              }
+              setTimeout(() => { swiping.current = false; }, 50);
+            })
+            .onFinalize(() => {
+              setTimeout(() => { swiping.current = false; }, 50);
+            })
+            .runOnJS(true)
+          }>
+            <View style={{ height: pagerHeight }}>
+              <FormsTabContent
+                forms={tabData[availableTabs[tabIndex]].forms}
+                arabic={tabData[availableTabs[tabIndex]].arabic}
+                total={tabData[availableTabs[tabIndex]].total}
+                currentArabic={w.a}
+                language={language}
+                colors={colors}
+                onFormPress={handleFormPress}
+              />
+            </View>
+          </GestureDetector>
         </View>
       )}
 
