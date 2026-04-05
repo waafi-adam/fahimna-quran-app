@@ -7,7 +7,9 @@ import { useWordStatus } from '@/hooks/use-word-status';
 import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLemmaForms, getExactCount, getMorphology } from '@/lib/quran-data';
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
+import { playWord } from '@/lib/audio-player';
 import { useTheme, type Colors } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 import WordSegments from '@/components/word-segments';
 import MorphologyTable from '@/components/morphology-table';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
@@ -259,11 +261,27 @@ export default function WordSheet() {
         </View>
       )}
 
-      {/* Transliteration */}
+      {/* Transliteration + play button */}
       {w.t.length > 0 && (
-        <Text style={{ fontSize: 16, color: colors.textMuted, textAlign: 'center', fontStyle: 'italic' }}>
-          {w.t}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 16, color: colors.textMuted, fontStyle: 'italic' }}>
+            {w.t}
+          </Text>
+          <Pressable
+            onPress={() => playWord(Number(surah), Number(verse), Number(wordPos))}
+            hitSlop={8}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: colors.bgSecondary,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Ionicons name="volume-medium" size={16} color={colors.textMuted} />
+          </Pressable>
+        </View>
       )}
 
       {/* Meaning */}

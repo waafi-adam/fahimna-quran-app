@@ -165,3 +165,26 @@ export function stop() {
   stopInternal();
   notify();
 }
+
+// --- Word audio (separate player, doesn't interfere with ayah playback) ---
+
+let wordPlayer: AudioPlayer | null = null;
+
+export async function playWord(surah: number, ayah: number, wordPos: number) {
+  await ensureAudioMode();
+
+  // Clean up previous word player
+  if (wordPlayer) { wordPlayer.release(); wordPlayer = null; }
+
+  const s = String(surah).padStart(3, '0');
+  const a = String(ayah).padStart(3, '0');
+  const w = String(wordPos).padStart(3, '0');
+  const url = `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
+
+  try {
+    wordPlayer = createAudioPlayer({ uri: url });
+    wordPlayer.play();
+  } catch {
+    if (wordPlayer) { wordPlayer.release(); wordPlayer = null; }
+  }
+}
