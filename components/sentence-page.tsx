@@ -124,13 +124,21 @@ export default function SentencePage({ page, mode, language, bottomPadding, page
             key={`${section.surah}:${section.verse}`}
             style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
           >
-            {/* Bookmark – top left */}
-            <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />
+            {/* Bookmark top-left, ayah menu top-right */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />
+              <Pressable
+                onPress={() => router.push(`/ayah-sheet?surah=${section.surah}&ayah=${section.verse}`)}
+                hitSlop={8}
+              >
+                <Text style={{ fontSize: 18, color: colors.textMuted, fontWeight: '700' }}>···</Text>
+              </Pressable>
+            </View>
 
             <AyahText words={section.words} mode={mode} pageNumber={pageNumber} router={router} isPlayingAyah={isPlayingAyah} audio={audio} />
 
             {/* Play controls – right aligned */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4 }}>
               <AyahPlayButtons surah={section.surah} ayah={section.verse} reciter={reciter} />
             </View>
 

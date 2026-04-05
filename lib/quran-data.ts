@@ -2,6 +2,7 @@ import type {
   Chapter, Juz, Hizb, Rub, PageData, AyahTranslation,
   Reciter, AudioAyah, TafsirIndex, TafsirSurah,
   Root, Lemma, Word, Language, DerivedForm,
+  WordMorphology, WordSegment,
 } from '@/types/quran';
 
 // === Eagerly loaded startup data ===
@@ -142,4 +143,55 @@ export function getLemmaForms(lemmaId: number): DerivedForm[] {
 export function getExactCount(arabicText: string): number {
   if (!exactCountsData) exactCountsData = require('@/assets/data/exact-counts.json');
   return exactCountsData![arabicText] ?? 0;
+}
+
+// === Public API — Morphology / Grammar data (lazy loaded per surah) ===
+
+const morphologyCtx = require.context('../assets/data/morphology', false, /\.json$/);
+
+const SEG_TYPES: WordSegment['type'][] = ['prefix', 'stem', 'suffix'];
+
+/** Expand minified JSON entry into full WordMorphology */
+function expandMorphology(m: any): WordMorphology {
+  return {
+    seg: (m.s || []).map((t: any) => ({
+      ar: t[0],
+      posAr: t[1],
+      posEn: t[2],
+      type: SEG_TYPES[t[3]] ?? 'stem',
+    })),
+    pos: m.p ?? '',
+    posAr: m.pa ?? '',
+    pattern: m.pt,
+    gender: m.g,
+    number: m.n,
+    person: m.pe,
+    case: m.c,
+    caseAr: m.ca,
+    mood: m.mo,
+    voice: m.vo,
+    state: m.st,
+    derivation: m.d,
+    irab: m.i,
+    syntacticRole: m.sr,
+    syntacticRoleEn: m.sre,
+  };
+}
+
+/** Get morphology data for a single word */
+export function getMorphology(surah: number, ayah: number, wordPos: number): WordMorphology | null {
+  const data = morphologyCtx(`./${surah}.json`);
+  const entry = data[`${ayah}:${wordPos}`];
+  return entry ? expandMorphology(entry) : null;
+}
+
+/** Get all morphology entries for a complete ayah */
+export function getAyahMorphology(surah: number, ayah: number): Record<number, WordMorphology> {
+  const data = morphologyCtx(`./${surah}.json`);
+  const result: Record<number, WordMorphology> = {};
+  for (const [key, value] of Object.entries(data)) {
+    const [a, w] = key.split(':').map(Number);
+    if (a === ayah) result[w] = expandMorphology(value);
+  }
+  return result;
 }
