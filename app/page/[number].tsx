@@ -34,6 +34,7 @@ export default function ReaderScreen() {
   const [mode, setMode] = useStorage<ReaderMode>('readerMode', 'reading');
   const [language] = useStorage<Language>('language', 'en');
   const [swipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
+  const [propagation] = useStorage<import('@/types/quran').PropagationMode>('propagation', 'lemma');
   const [currentPage, setCurrentPage] = useState(initialPage);
   const prevPageRef = useRef(initialPage);
   const [mushafContentHeight, setMushafContentHeight] = useState(0);
@@ -85,7 +86,7 @@ export default function ReaderScreen() {
 
         // Apply swipe action to the page we just left (only when going forward, never in reading mode)
         if (page > leavingPage && swipeAction !== 'none' && mode === 'learning') {
-          bulkSetPageWordStatus(leavingPage, 'new', swipeAction);
+          bulkSetPageWordStatus(leavingPage, 'new', swipeAction, propagation);
         }
       }
     },

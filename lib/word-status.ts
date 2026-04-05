@@ -67,18 +67,27 @@ export function setWordStatus(
     updated++;
   };
 
-  if (propagation === 'exact' || (word.ri == null && word.li == null)) {
-    setKey(wordKey(word));
-  } else if (propagation === 'lemma' && word.li != null) {
-    const lemma = getLemmaById(word.li);
-    if (lemma) {
-      for (const loc of lemma.words) setKey(loc);
-    }
-  } else if (propagation === 'root' && word.ri != null) {
+  // Fallback chain: root → lemma → exact
+  let propagated = false;
+
+  if (propagation === 'root' && word.ri != null) {
     const root = getRootById(word.ri);
     if (root) {
       for (const loc of root.words) setKey(loc);
+      propagated = true;
     }
+  }
+
+  if (!propagated && (propagation === 'root' || propagation === 'lemma') && word.li != null) {
+    const lemma = getLemmaById(word.li);
+    if (lemma) {
+      for (const loc of lemma.words) setKey(loc);
+      propagated = true;
+    }
+  }
+
+  if (!propagated) {
+    setKey(wordKey(word));
   }
 
   if (updated > 0) {
@@ -110,12 +119,22 @@ export function bulkSetPageWordStatus(
   pageNum: number,
   fromStatus: WordStatus,
   toStatus: WordStatus,
+  propagation: PropagationMode = 'exact',
 ): number {
-  const { getPage } = require('@/lib/quran-data');
+  const { getPage, getLemmaById, getRootById } = require('@/lib/quran-data');
   const page = getPage(pageNum);
   const store = getStore();
   const toNum = STATUS_TO_NUM[toStatus];
   let updated = 0;
+
+  const setKey = (key: string) => {
+    if (toNum === 0) {
+      delete store[key];
+    } else {
+      store[key] = toNum;
+    }
+    updated++;
+  };
 
   for (const line of page.lines) {
     if (line.type !== 'ayah') continue;
@@ -124,12 +143,29 @@ export function bulkSetPageWordStatus(
       const key = wordKey(word);
       const currentStatus = NUM_TO_STATUS[store[key] ?? 0];
       if (currentStatus !== fromStatus) continue;
-      if (toNum === 0) {
-        delete store[key];
-      } else {
-        store[key] = toNum;
+
+      // Fallback chain: root → lemma → exact
+      let propagated = false;
+
+      if (propagation === 'root' && word.ri != null) {
+        const root = getRootById(word.ri);
+        if (root) {
+          for (const loc of root.words) setKey(loc);
+          propagated = true;
+        }
       }
-      updated++;
+
+      if (!propagated && (propagation === 'root' || propagation === 'lemma') && word.li != null) {
+        const lemma = getLemmaById(word.li);
+        if (lemma) {
+          for (const loc of lemma.words) setKey(loc);
+          propagated = true;
+        }
+      }
+
+      if (!propagated) {
+        setKey(key);
+      }
     }
   }
 
