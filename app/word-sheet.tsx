@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -55,6 +55,17 @@ function FormsTabContent({
   colors: Colors;
   onFormPress: (form: DerivedForm) => void;
 }) {
+  const formsScrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const idx = forms.findIndex((f) => f[0] === currentArabic);
+    if (idx > 0) {
+      requestAnimationFrame(() => {
+        formsScrollRef.current?.scrollTo({ y: idx * FORM_ROW_HEIGHT, animated: false });
+      });
+    }
+  }, [forms, currentArabic]);
+
   return (
     <View style={{ flex: 1 }}>
       {/* Header info */}
@@ -70,7 +81,7 @@ function FormsTabContent({
       </View>
 
       {/* Forms list */}
-      <ScrollView nestedScrollEnabled style={{ flex: 1 }}>
+      <ScrollView ref={formsScrollRef} nestedScrollEnabled style={{ flex: 1 }}>
         {forms.map((form) => {
           const isCurrentForm = form[0] === currentArabic;
           return (
