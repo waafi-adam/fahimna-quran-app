@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Pressable, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
-import { getRootById, getLemmaById, getPage, getTranslation, isVerseMarker } from '@/lib/quran-data';
+import { getRootById, getLemmaById, getRootForms, getLemmaForms, getPage, getTranslation, isVerseMarker } from '@/lib/quran-data';
 import { getAyahPage, getWordMeaning } from '@/lib/page-helpers';
 import { useTheme, type Colors } from '@/lib/theme';
 import TabPager from '@/components/tab-pager';
@@ -30,7 +30,7 @@ function getAyahWordsWithHighlight(
   pageNum: number,
   surah: number,
   ayah: number,
-  matchArabic: string,
+  matchSet: Set<string>,
   language: Language,
 ): { words: AyahWord[]; wbwMeaning: string } {
   const page = getPage(pageNum);
@@ -42,7 +42,7 @@ function getAyahWordsWithHighlight(
     for (const w of (line as AyahLine).words) {
       if (w.s !== surah || w.v !== ayah) continue;
       if (isVerseMarker(w)) continue;
-      const isMatch = w.a === matchArabic;
+      const isMatch = matchSet.has(w.a);
       words.push({ text: w.a, isMatch });
       if (isMatch && !wbwMeaning) {
         wbwMeaning = getWordMeaning(w, language);
@@ -83,7 +83,7 @@ function highlightInText(text: string, search: string): { text: string; bold: bo
 function resolveOccurrences(
   wordLocations: string[],
   arabicFilter: string | null,
-  matchArabic: string,
+  matchSet: Set<string>,
   language: Language,
 ): Occurrence[] {
   const seen = new Set<string>();
@@ -115,7 +115,7 @@ function resolveOccurrences(
 
     seen.add(ayahKey);
 
-    const { words, wbwMeaning } = getAyahWordsWithHighlight(pageNum, s, v, matchArabic, language);
+    const { words, wbwMeaning } = getAyahWordsWithHighlight(pageNum, s, v, matchSet, language);
 
     let translationText = '';
     try {
@@ -141,22 +141,43 @@ function resolveOccurrences(
 function TabContent({
   wordLocations,
   arabicFilter,
-  arabic,
+  matchSet,
   language,
   colors,
   onRowPress,
+  originAyahKey,
 }: {
   wordLocations: string[];
   arabicFilter: string | null;
-  arabic: string;
+  matchSet: Set<string>;
   language: Language;
   colors: Colors;
   onRowPress: (pageNum: number) => void;
+  originAyahKey?: string;
 }) {
+  const listRef = useRef<FlatList>(null);
+
   const occurrences = useMemo(
-    () => resolveOccurrences(wordLocations, arabicFilter, arabic, language),
-    [wordLocations, arabicFilter, arabic, language],
+    () => resolveOccurrences(wordLocations, arabicFilter, matchSet, language),
+    [wordLocations, arabicFilter, matchSet, language],
   );
+
+  useEffect(() => {
+    if (occurrences.length === 0) return;
+    let targetIndex = -1;
+    if (originAyahKey) {
+      targetIndex = occurrences.findIndex((o) => o.key === originAyahKey);
+    }
+    if (targetIndex < 0) {
+      // Fallback: first occurrence where the exact arabic form appears
+      targetIndex = occurrences.findIndex((o) => o.words.some((w) => w.isMatch));
+    }
+    if (targetIndex > 0) {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToIndex({ index: targetIndex, animated: false, viewPosition: 0.3 });
+      });
+    }
+  }, [occurrences, originAyahKey]);
 
   const renderOccurrence = useCallback(
     ({ item }: { item: Occurrence }) => {
@@ -220,28 +241,42 @@ function TabContent({
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20, paddingVertical: 14, backgroundColor: colors.bgSecondary }}>
         <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18 }}>{arabic}</Text>
-          {'  '}appears in <Text style={{ fontWeight: '600' }}>{occurrences.length} ayahs</Text>
+          {matchSet.size === 1
+            ? <><Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18 }}>{[...matchSet][0]}</Text>{'  '}appears in </>
+            : <><Text style={{ fontWeight: '600' }}>{matchSet.size} forms</Text>{' appear in '}</>
+          }
+          <Text style={{ fontWeight: '600' }}>{occurrences.length} ayahs</Text>
         </Text>
       </View>
       <FlatList
+        ref={listRef}
         nestedScrollEnabled
         style={{ flex: 1 }}
         data={occurrences}
         renderItem={renderOccurrence}
         keyExtractor={(item) => item.key}
         contentContainerStyle={{ paddingBottom: 40 }}
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            listRef.current?.scrollToIndex({ index: info.index, animated: false, viewPosition: 0.3 });
+          }, 100);
+        }}
       />
     </View>
   );
 }
 
 export default function WordUsagesScreen() {
-  const { arabic, rootId, lemmaId } = useLocalSearchParams<{
+  const { arabic, rootId, lemmaId, surah, ayah, tab } = useLocalSearchParams<{
     arabic: string;
     rootId: string;
     lemmaId: string;
+    surah: string;
+    ayah: string;
+    tab: string;
   }>();
+
+  const originAyahKey = surah && ayah ? `${surah}:${ayah}` : undefined;
 
   const router = useRouter();
   const { colors } = useTheme();
@@ -258,7 +293,13 @@ export default function WordUsagesScreen() {
     return tabs;
   }, [root, lemma]);
 
-  const [tabIndex, setTabIndex] = useState(0);
+  const [tabIndex, setTabIndex] = useState(() => {
+    if (tab) {
+      const idx = availableTabs.indexOf(tab as Tab);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  });
 
   const tabLabels: Record<Tab, string> = {
     exact: 'Exact',
@@ -266,17 +307,21 @@ export default function WordUsagesScreen() {
     root: 'Root',
   };
 
-  // Pre-compute word locations + filter per tab
+  // Pre-compute word locations + filter + match sets per tab
   const tabConfigs = useMemo(() => {
     const broadest = root?.words ?? lemma?.words ?? [];
+    const exactSet = new Set([arabic]);
+    const lemmaSet = lemma ? new Set(getLemmaForms(lemma.id).map((f) => f[0])) : exactSet;
+    const rootSet = root ? new Set(getRootForms(root.id).map((f) => f[0])) : lemmaSet;
+
     return availableTabs.map((tab) => {
       switch (tab) {
         case 'exact':
-          return { wordLocations: broadest, arabicFilter: arabic };
+          return { wordLocations: broadest, arabicFilter: arabic, matchSet: exactSet };
         case 'lemma':
-          return { wordLocations: lemma?.words ?? [], arabicFilter: null };
+          return { wordLocations: lemma?.words ?? [], arabicFilter: null, matchSet: lemmaSet };
         case 'root':
-          return { wordLocations: root?.words ?? [], arabicFilter: null };
+          return { wordLocations: root?.words ?? [], arabicFilter: null, matchSet: rootSet };
       }
     });
   }, [availableTabs, root, lemma, arabic]);
@@ -341,9 +386,10 @@ export default function WordUsagesScreen() {
               key={availableTabs[i]}
               wordLocations={config.wordLocations}
               arabicFilter={config.arabicFilter}
-              arabic={arabic}
+              matchSet={config.matchSet}
               language={language}
               colors={colors}
+              originAyahKey={originAyahKey}
               onRowPress={handleRowPress}
             />
           ))}

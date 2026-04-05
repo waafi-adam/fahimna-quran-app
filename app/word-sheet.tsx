@@ -195,11 +195,12 @@ export default function WordSheet() {
   const handleFormPress = useCallback(
     (form: DerivedForm) => {
       if (swiping.current) return;
+      const activeTab = availableTabs[tabIndex];
       router.push(
-        `/word-usages?arabic=${encodeURIComponent(form[0])}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}`,
+        `/word-usages?arabic=${encodeURIComponent(form[0])}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}&surah=${w.s}&ayah=${w.v}&tab=${activeTab}`,
       );
     },
-    [router, root, lemma],
+    [router, root, lemma, availableTabs, tabIndex],
   );
 
   return (
