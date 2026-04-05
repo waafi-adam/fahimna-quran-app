@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
@@ -145,6 +145,8 @@ export default function WordSheet() {
 
   const [tabIndex, setTabIndex] = useState(0);
   const [formsExpanded, setFormsExpanded] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
 
   const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
     exact: { forms: exactForms, arabic: w.a, total: exactCount },
@@ -185,7 +187,14 @@ export default function WordSheet() {
   );
 
   return (
-    <ScrollView nestedScrollEnabled contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <ScrollView
+      ref={scrollRef}
+      nestedScrollEnabled
+      onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
+      scrollEventThrottle={16}
+      contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }}
+      style={{ flex: 1, backgroundColor: colors.bg }}
+    >
       {/* Arabic word */}
       <Text
         style={{
@@ -312,7 +321,12 @@ export default function WordSheet() {
             })}
             {showExpandToggle && (
               <Pressable
-                onPress={() => setFormsExpanded(!formsExpanded)}
+                onPress={() => {
+                  setFormsExpanded(!formsExpanded);
+                  requestAnimationFrame(() => {
+                    scrollRef.current?.scrollTo({ y: scrollY.current, animated: false });
+                  });
+                }}
                 style={{ paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'center' }}
               >
                 <Text style={{ fontSize: 12, color: colors.accent }}>
