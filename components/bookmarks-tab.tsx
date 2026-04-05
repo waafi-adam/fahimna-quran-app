@@ -110,7 +110,12 @@ function BookmarkRow({ bookmark }: { bookmark: Bookmark }) {
 
   return (
     <Pressable
-      onPress={() => router.push(`/page/${bookmark.page}`)}
+      onPress={() => {
+        const params = bookmark.sura != null && bookmark.ayah != null
+          ? `?surah=${bookmark.sura}&ayah=${bookmark.ayah}`
+          : '';
+        router.push(`/page/${bookmark.page}${params}`);
+      }}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',

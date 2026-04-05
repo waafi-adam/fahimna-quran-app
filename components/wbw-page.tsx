@@ -1,6 +1,6 @@
 'use no memo';
-import { useState, useMemo } from 'react';
-import { ScrollView, View, Text, Pressable } from 'react-native';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { ScrollView, View, Text, Pressable, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { PageData, ReaderMode, Language } from '@/types/quran';
 import { getTranslation, isVerseMarker, getMorphology } from '@/lib/quran-data';
@@ -46,9 +46,10 @@ type Props = {
   language: Language;
   bottomPadding: number;
   pageNumber: number;
+  highlightAyah?: { surah: number; ayah: number } | null;
 };
 
-export default function WbwPage({ page, mode, language, bottomPadding, pageNumber }: Props) {
+export default function WbwPage({ page, mode, language, bottomPadding, pageNumber, highlightAyah }: Props) {
   useWordStatusVersion();
   const router = useRouter();
   const { colors } = useTheme();
@@ -56,6 +57,33 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
   const [reciter] = useStorage('reciter', 'husary-murattal');
   const [showGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
   const sections = getPageSections(page);
+  const scrollRef = useRef<ScrollView>(null);
+  const ayahLayouts = useRef<Record<string, number>>({});
+  const highlightOpacity = useRef(new Animated.Value(0)).current;
+  const highlightDone = useRef(false);
+
+  const onAyahLayout = useCallback((key: string, y: number) => {
+    ayahLayouts.current[key] = y;
+  }, []);
+
+  useEffect(() => {
+    if (!highlightAyah || highlightDone.current) return;
+    const key = `${highlightAyah.surah}:${highlightAyah.ayah}`;
+    const tryScroll = () => {
+      const y = ayahLayouts.current[key];
+      if (y != null) {
+        scrollRef.current?.scrollTo({ y, animated: true });
+        Animated.sequence([
+          Animated.timing(highlightOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.delay(1500),
+          Animated.timing(highlightOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ]).start(() => { highlightDone.current = true; });
+      } else {
+        setTimeout(tryScroll, 100);
+      }
+    };
+    requestAnimationFrame(tryScroll);
+  }, [highlightAyah]);
 
   // Pre-compute POS labels when grammar labels setting is on
   const posLabels = useMemo(() => {
@@ -85,6 +113,7 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
 
   return (
     <ScrollView
+      ref={scrollRef}
       contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: bottomPadding + 16 }}
       showsVerticalScrollIndicator={false}
     >
@@ -99,11 +128,26 @@ export default function WbwPage({ page, mode, language, bottomPadding, pageNumbe
         const transText = translationCache.get(section.surah)?.get(section.verse) ?? '';
         const isPlayingAyah = audio.status === 'playing' && audio.surah === section.surah && audio.ayah === section.verse;
 
+        const ayahKey = `${section.surah}:${section.verse}`;
+        const isHighlightTarget = !highlightDone.current && highlightAyah && highlightAyah.surah === section.surah && highlightAyah.ayah === section.verse;
+
         return (
           <View
-            key={`${section.surah}:${section.verse}`}
+            key={ayahKey}
+            onLayout={(e) => onAyahLayout(ayahKey, e.nativeEvent.layout.y)}
             style={isPlayingAyah ? { backgroundColor: colors.audioAyahBg, borderRadius: 8, padding: 4, margin: -4 } : undefined}
           >
+            {isHighlightTarget && (
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute', top: -4, left: -4, right: -4, bottom: -4,
+                  backgroundColor: colors.accentBg,
+                  opacity: highlightOpacity,
+                  borderRadius: 8,
+                }}
+              />
+            )}
             {/* Bookmark top-left, ayah menu top-right */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <AyahBookmarkButton surah={section.surah} ayah={section.verse} page={pageNumber} />

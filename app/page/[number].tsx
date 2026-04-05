@@ -24,8 +24,9 @@ import type { Word } from '@/types/quran';
 const PAGE_IDS = Array.from({ length: 604 }, (_, i) => i + 1);
 
 export default function ReaderScreen() {
-  const { number } = useLocalSearchParams<{ number: string }>();
+  const { number, surah: targetSurah, ayah: targetAyah } = useLocalSearchParams<{ number: string; surah: string; ayah: string }>();
   const initialPage = Number(number) || 1;
+  const highlightAyah = targetSurah && targetAyah ? { surah: Number(targetSurah), ayah: Number(targetAyah) } : null;
 
   const { width } = useWindowDimensions();
 
@@ -112,6 +113,7 @@ export default function ReaderScreen() {
           language={language}
           mushafContentHeight={mushafContentHeight}
           onWordPress={handleWordPress}
+          highlightAyah={pageNum === initialPage ? highlightAyah : null}
         />
       </View>
     ),
@@ -198,6 +200,7 @@ function PageContent({
   language,
   mushafContentHeight,
   onWordPress,
+  highlightAyah,
 }: {
   pageNum: number;
   layout: ReaderLayout;
@@ -205,14 +208,15 @@ function PageContent({
   language: Language;
   mushafContentHeight: number;
   onWordPress: (word: Word, pageNum: number) => void;
+  highlightAyah: { surah: number; ayah: number } | null;
 }) {
   const page = getPage(pageNum);
 
   switch (layout) {
     case 'wbw':
-      return <WbwPage page={page} mode={mode} language={language} bottomPadding={0} pageNumber={pageNum} />;
+      return <WbwPage page={page} mode={mode} language={language} bottomPadding={0} pageNumber={pageNum} highlightAyah={highlightAyah} />;
     case 'sentence':
-      return <SentencePage page={page} mode={mode} language={language} bottomPadding={0} pageNumber={pageNum} />;
+      return <SentencePage page={page} mode={mode} language={language} bottomPadding={0} pageNumber={pageNum} highlightAyah={highlightAyah} />;
     case 'mushaf':
       return (
         <MushafPage
@@ -220,6 +224,7 @@ function PageContent({
           mode={mode}
           contentHeight={mushafContentHeight > 0 ? mushafContentHeight : 600}
           onWordPress={(word) => onWordPress(word, pageNum)}
+          highlightAyah={highlightAyah}
         />
       );
   }

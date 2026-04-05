@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, Pressable, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getJuzList, getRubList, getChapter } from '@/lib/quran-data';
+import { getAyahPage } from '@/lib/page-helpers';
 import { getJuzProgress } from '@/lib/progress';
 import ProgressBar, { getProgressColors } from '@/components/progress-bar';
 import { useTheme } from '@/lib/theme';
@@ -34,14 +35,12 @@ function verseRef(verse: string): string {
 function RubRow({ rub, rubIndex }: { rub: Rub; rubIndex: number }) {
   const router = useRouter();
   const { colors } = useTheme();
-  // Figure out start page from first verse
-  const [surahNum] = rub.firstVerse.split(':').map(Number);
-  const ch = getChapter(surahNum);
-  const page = ch?.startPage ?? 1;
+  const [surahNum, verseNum] = rub.firstVerse.split(':').map(Number);
+  const page = getAyahPage(surahNum, verseNum);
 
   return (
     <Pressable
-      onPress={() => router.push(`/page/${page}`)}
+      onPress={() => router.push(`/page/${page}?surah=${surahNum}&ayah=${verseNum}`)}
       style={({ pressed }) => ({
         flexDirection: 'row',
         paddingVertical: 10,

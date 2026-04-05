@@ -1,4 +1,5 @@
 'use no memo';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import type { PageData, AyahLine, ReaderMode, Word } from '@/types/quran';
 import { getChapter } from '@/lib/quran-data';
@@ -14,12 +15,21 @@ type Props = {
   mode: ReaderMode;
   contentHeight: number;
   onWordPress?: (word: Word) => void;
+  highlightAyah?: { surah: number; ayah: number } | null;
 };
 
-export default function MushafPage({ page, mode, contentHeight, onWordPress }: Props) {
+export default function MushafPage({ page, mode, contentHeight, onWordPress, highlightAyah }: Props) {
   useWordStatusVersion();
   const { colors } = useTheme();
   const audio = useAudioPlayer();
+  const [showHighlight, setShowHighlight] = useState(!!highlightAyah);
+
+  useEffect(() => {
+    if (!highlightAyah) return;
+    setShowHighlight(true);
+    const timer = setTimeout(() => setShowHighlight(false), 2400);
+    return () => clearTimeout(timer);
+  }, [highlightAyah]);
 
   const STATUS_COLOR: Record<string, string | undefined> = {
     new: colors.statusNewBg,
@@ -49,8 +59,9 @@ export default function MushafPage({ page, mode, contentHeight, onWordPress }: P
       >
         {words.map((word, idx) => {
           const isActiveWord = audio.status === 'playing' && audio.surah === word.s && audio.ayah === word.v && audio.activeWordPos === word.w;
-          const bg = mode === 'learning' ? STATUS_COLOR[getWordStatus(word)] : undefined;
-          const textColor = isActiveWord ? colors.audioWordText : undefined;
+          const isHighlightWord = showHighlight && highlightAyah && word.s === highlightAyah.surah && word.v === highlightAyah.ayah;
+          const bg = isHighlightWord ? colors.accentBg : (mode === 'learning' ? STATUS_COLOR[getWordStatus(word)] : undefined);
+          const textColor = isActiveWord ? colors.audioWordText : colors.text;
           return (
             <Text
               key={word.id}
