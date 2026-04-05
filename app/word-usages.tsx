@@ -211,7 +211,7 @@ function TabContent({
             {item.words.map((w, i) => (
               <Text
                 key={i}
-                style={w.isMatch ? { color: colors.accent } : undefined}
+                style={w.isMatch ? { color: colors.audioWordText } : undefined}
               >
                 {i > 0 ? ' ' : ''}{w.text}
               </Text>

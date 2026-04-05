@@ -132,16 +132,16 @@ function JuzCard({ juzId }: { juzId: number }) {
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {progress.known > 0 && (
                   <Text style={{ fontSize: 10, color: pc.known, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
-                    {progress.known}
+                    {progress.known} known
                   </Text>
                 )}
                 {progress.learning > 0 && (
                   <Text style={{ fontSize: 10, color: pc.learning, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
-                    {progress.learning}
+                    {progress.learning} learning
                   </Text>
                 )}
                 <Text style={{ fontSize: 10, color: pc.new, fontVariant: ['tabular-nums'] }}>
-                  {progress.new}
+                  {progress.new} new
                 </Text>
               </View>
             )}
