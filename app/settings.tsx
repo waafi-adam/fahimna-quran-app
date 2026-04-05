@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { useStorage } from '@/hooks/use-storage';
 import { useTheme, type Colors } from '@/lib/theme';
 import { resetAllProgress } from '@/lib/word-status';
-import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode, SwipeAction } from '@/types/quran';
+import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode, SwipeAction, Reciter } from '@/types/quran';
+import recitersData from '@/assets/data/audio/reciters.json';
 
 // --- Option data ---
 
@@ -19,6 +21,16 @@ const LANGUAGES: { key: Language; title: string; subtitle: string }[] = [
   { key: 'id', title: 'Indonesian', subtitle: 'King Fahad Indonesian translation' },
   { key: 'ur', title: 'Urdu', subtitle: 'Tafsir-e-Usmani translation' },
 ];
+
+const RECITERS: { key: string; icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }[] =
+  (recitersData as Reciter[]).map((r) => ({
+    key: r.slug,
+    icon: 'mic-outline' as keyof typeof Ionicons.glyphMap,
+    title: r.name,
+    subtitle: r.style === 'Mujawwad'
+      ? 'Mujawwad \u2014 Melodic, elaborate recitation'
+      : 'Murattal \u2014 Steady-paced recitation',
+  }));
 
 const PROPAGATIONS: { key: PropagationMode; icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }[] = [
   { key: 'lemma', icon: 'layers-outline', title: 'Lemma', subtitle: 'Words with the same base form share status' },
@@ -105,6 +117,63 @@ function RadioCard({
   );
 }
 
+function ReciterDropdown({ reciter, setReciter, colors }: { reciter: string; setReciter: (v: string) => void; colors: Colors }) {
+  const [open, setOpen] = useState(false);
+  const selected = RECITERS.find((r) => r.key === reciter) ?? RECITERS[0];
+
+  return (
+    <View style={{ paddingHorizontal: 20 }}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 14,
+          borderRadius: 12,
+          borderCurve: 'continuous',
+          borderWidth: 1,
+          borderColor: open ? colors.text : colors.border,
+          backgroundColor: colors.bgSecondary,
+        }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.bgTertiary, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <Ionicons name="mic-outline" size={20} color={colors.textSecondary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{selected.title}</Text>
+          <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>{selected.subtitle}</Text>
+        </View>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+      </Pressable>
+
+      {open && (
+        <View style={{ marginTop: 4, borderRadius: 12, borderCurve: 'continuous', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg, overflow: 'hidden' }}>
+          {RECITERS.map((item, i) => (
+            <Pressable
+              key={item.key}
+              onPress={() => { setReciter(item.key); setOpen(false); }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 14,
+                backgroundColor: reciter === item.key ? colors.bgSecondary : colors.bg,
+                borderTopWidth: i > 0 ? 1 : 0,
+                borderTopColor: colors.border,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{item.title}</Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>{item.subtitle}</Text>
+              </View>
+              {reciter === item.key && <Ionicons name="checkmark" size={20} color={colors.text} />}
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // --- Main screen ---
 
 export default function SettingsScreen() {
@@ -114,6 +183,7 @@ export default function SettingsScreen() {
   const [propagation, setPropagation] = useStorage<PropagationMode>('propagation', 'lemma');
   const [swipeAction, setSwipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
   const [showGrammarLabels, setShowGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
+  const [reciter, setReciter] = useStorage('reciter', 'husary-murattal');
   const { colors, mode: themeMode, setMode: setThemeMode } = useTheme();
 
   const confirmReset = () => {
@@ -190,6 +260,10 @@ export default function SettingsScreen() {
           />
         ))}
       </View>
+
+      {/* Reciter */}
+      <SectionHeader label="RECITER" colors={colors} />
+      <ReciterDropdown reciter={reciter} setReciter={setReciter} colors={colors} />
 
       {/* Learning */}
       <SectionHeader label="WORD PROPAGATION" colors={colors} />
