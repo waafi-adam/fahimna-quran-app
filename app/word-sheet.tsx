@@ -68,8 +68,8 @@ function FormsTabContent({
         </View>
       </View>
 
-      {/* Forms list (no inner ScrollView — outer ScrollView handles scrolling) */}
-      <View style={{ flex: 1, overflow: 'hidden' }}>
+      {/* Forms list */}
+      <ScrollView nestedScrollEnabled style={{ flex: 1 }}>
         {forms.map((form) => {
           const isCurrentForm = form[0] === currentArabic;
           return (
@@ -100,7 +100,7 @@ function FormsTabContent({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -185,7 +185,7 @@ export default function WordSheet() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <ScrollView nestedScrollEnabled contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 48 }} style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Arabic word */}
       <Text
         style={{
