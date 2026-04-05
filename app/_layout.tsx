@@ -35,7 +35,7 @@ function ThemedStack() {
           name="word-sheet"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.5, 0.85],
+            sheetAllowedDetents: [0.92],
             sheetGrabberVisible: true,
             headerShown: false,
           }}
@@ -82,7 +82,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 

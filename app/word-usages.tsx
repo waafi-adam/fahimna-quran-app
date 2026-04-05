@@ -225,6 +225,8 @@ function TabContent({
         </Text>
       </View>
       <FlatList
+        nestedScrollEnabled
+        style={{ flex: 1 }}
         data={occurrences}
         renderItem={renderOccurrence}
         keyExtractor={(item) => item.key}
