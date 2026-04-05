@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStorage } from '@/hooks/use-storage';
@@ -164,6 +164,20 @@ export default function WordSheet() {
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(0);
   const swiping = useRef(false);
+  const tabAnim = useRef(new Animated.Value(0)).current;
+  const prevTabIndex = useRef(tabIndex);
+
+  const animateTab = useCallback((newIndex: number) => {
+    const direction = newIndex > prevTabIndex.current ? 1 : -1;
+    prevTabIndex.current = newIndex;
+    tabAnim.setValue(direction * 40);
+    setTabIndex(newIndex);
+    Animated.timing(tabAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [tabAnim]);
 
   const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
     exact: { forms: exactForms, arabic: w.a, total: exactCount },
@@ -333,7 +347,7 @@ export default function WordSheet() {
               return (
                 <Pressable
                   key={tab}
-                  onPress={() => setTabIndex(i)}
+                  onPress={() => animateTab(i)}
                   style={{
                     flex: 1,
                     paddingVertical: 10,
@@ -381,9 +395,9 @@ export default function WordSheet() {
             .onStart(() => { swiping.current = true; })
             .onEnd((e) => {
               if (e.velocityX < -300 && tabIndex < availableTabs.length - 1) {
-                setTabIndex(tabIndex + 1);
+                animateTab(tabIndex + 1);
               } else if (e.velocityX > 300 && tabIndex > 0) {
-                setTabIndex(tabIndex - 1);
+                animateTab(tabIndex - 1);
               }
               setTimeout(() => { swiping.current = false; }, 50);
             })
@@ -392,7 +406,7 @@ export default function WordSheet() {
             })
             .runOnJS(true)
           }>
-            <View style={{ height: pagerHeight }}>
+            <Animated.View style={{ height: pagerHeight, transform: [{ translateX: tabAnim }] }}>
               <FormsTabContent
                 forms={tabData[availableTabs[tabIndex]].forms}
                 arabic={tabData[availableTabs[tabIndex]].arabic}
@@ -402,7 +416,7 @@ export default function WordSheet() {
                 colors={colors}
                 onFormPress={handleFormPress}
               />
-            </View>
+            </Animated.View>
           </GestureDetector>
         </View>
       )}
