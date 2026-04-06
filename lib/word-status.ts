@@ -40,6 +40,20 @@ export function onStatusChange(callback: Listener): () => void {
   return () => listeners.delete(callback);
 }
 
+// Typed status-change hooks for external systems (e.g., flashcard sync)
+type StatusChangeHook = (arabic: string, status: WordStatus) => void;
+const statusChangeHooks = new Set<StatusChangeHook>();
+
+/** Register a hook called with (arabic, newStatus) after each setWordStatus call */
+export function onWordStatusSet(hook: StatusChangeHook): () => void {
+  statusChangeHooks.add(hook);
+  return () => statusChangeHooks.delete(hook);
+}
+
+function notifyStatusHooks(arabic: string, status: WordStatus) {
+  statusChangeHooks.forEach((fn) => fn(arabic, status));
+}
+
 const wordKey = (word: Word) => `${word.s}:${word.v}:${word.w}`;
 
 /** Get a word's current status */
@@ -93,6 +107,7 @@ export function setWordStatus(
   if (updated > 0) {
     scheduleSave();
     notify();
+    notifyStatusHooks(word.a, status);
   }
   return updated;
 }
@@ -136,6 +151,8 @@ export function bulkSetPageWordStatus(
     updated++;
   };
 
+  const affectedArabic = new Set<string>();
+
   for (const line of page.lines) {
     if (line.type !== 'ayah') continue;
     for (const word of line.words) {
@@ -143,6 +160,8 @@ export function bulkSetPageWordStatus(
       const key = wordKey(word);
       const currentStatus = NUM_TO_STATUS[store[key] ?? 0];
       if (currentStatus !== fromStatus) continue;
+
+      affectedArabic.add(word.a);
 
       // Fallback chain: root → lemma → exact
       let propagated = false;
@@ -172,6 +191,9 @@ export function bulkSetPageWordStatus(
   if (updated > 0) {
     scheduleSave();
     notify();
+    for (const arabic of affectedArabic) {
+      notifyStatusHooks(arabic, toStatus);
+    }
   }
   return updated;
 }

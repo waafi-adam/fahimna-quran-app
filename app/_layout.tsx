@@ -66,6 +66,7 @@ function ThemedStack() {
             headerBackButtonDisplayMode: 'minimal',
           }}
         />
+        <Stack.Screen name="review-session" options={{ title: 'Review', headerShown: false }} />
         <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="+not-found" />

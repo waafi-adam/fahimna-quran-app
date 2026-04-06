@@ -236,6 +236,35 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type SwipeAction = 'none' | 'known' | 'learning';
 
+// === Flashcard / SRS types ===
+
+export type ReviewRecord = {
+  /** Timestamp (ms) when next review is due */
+  due: number;
+  /** Current interval in days */
+  interval: number;
+  /** SM-2 ease factor (default 2.5) */
+  ease: number;
+  /** Consecutive successful reviews */
+  reps: number;
+  /** 0 = in learning steps, 1+ = in review phase */
+  step: number;
+};
+
+/** Forgot=0, Hard=1, Good=2, Easy=3 */
+export type ReviewGrade = 0 | 1 | 2 | 3;
+
+export type FlashCard = {
+  /** Exact Arabic word form */
+  arabic: string;
+  /** All distinct WBW meanings for this form */
+  meanings: string[];
+  /** Transliteration */
+  transliteration: string;
+  /** Sample locations ["s:v:w", ...] for context */
+  locations: string[];
+};
+
 // === Grammar / Morphology (morphology/{1-114}.json) ===
 
 /** A single morphological segment of a word (prefix, stem, or suffix) */

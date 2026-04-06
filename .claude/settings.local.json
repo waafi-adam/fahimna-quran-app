@@ -27,7 +27,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{url_effective} %{redirect_url}\" \"https://verses.quran.com/wbw/001_001_001.mp3\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{url_effective} %{redirect_url}\" \"https://audio.qurancdn.com/wbw/001/001/001.mp3\")",
       "Bash(curl -s \"https://api.quran.com/api/v4/verses/by_key/1:1?language=en&words=true&word_fields=audio_url\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python3 -c \" import json,sys data=json.load\\(sys.stdin\\) for r in data.get\\('items',[]\\)[:10]: print\\(f\\\\\"{r['full_name']} ★{r['stargazers_count']} — {r['description'] or 'no desc'} {r['html_url']}\\\\\"\\) \")",
+      "Bash(python3 -c ':*)"
     ]
   }
 }

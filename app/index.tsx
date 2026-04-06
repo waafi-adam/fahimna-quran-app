@@ -7,9 +7,10 @@ import TabPager from '@/components/tab-pager';
 import SurahList from '@/components/surah-list';
 import JuzListTab from '@/components/juz-list';
 import BookmarksTab from '@/components/bookmarks-tab';
+import ReviewTab from '@/components/review-tab';
 import { useTheme } from '@/lib/theme';
 
-const TABS = ['Surahs', 'Juz', 'Bookmarks'] as const;
+const TABS = ['Surahs', 'Juz', 'Bookmarks', 'Review'] as const;
 
 export default function HomeScreen() {
   const [tabIndex, setTabIndex] = useState(0);
@@ -43,6 +44,7 @@ export default function HomeScreen() {
             <SurahList key="surahs" />,
             <JuzListTab key="juz" />,
             <BookmarksTab key="bookmarks" />,
+            <ReviewTab key="review" />,
           ]}
         </TabPager>
       </View>
