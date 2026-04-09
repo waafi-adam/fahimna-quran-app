@@ -3,9 +3,9 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
-import { getDueArabicForms, getReviewRecord, setReviewRecord, removeReviewRecord, recordReview } from '@/lib/review-store';
-import { getFlashCards } from '@/lib/flashcard-data';
-import { calculateNextReview, previewIntervals, shouldGraduate } from '@/lib/srs';
+import { getDueAndNewForms, getReviewRecord, setReviewRecord, removeReviewRecord, recordReview } from '@/lib/review-store';
+import { getLearningArabicForms, getFlashCards } from '@/lib/flashcard-data';
+import { calculateNextReview, previewIntervals, shouldGraduate, defaultReviewRecord } from '@/lib/srs';
 import { setWordStatus } from '@/lib/word-status';
 import type { FlashCard, ReviewGrade } from '@/types/quran';
 
@@ -27,7 +27,8 @@ export default function ReviewSessionScreen() {
 
   // Build the session deck once
   const deck = useMemo(() => {
-    const dueForms = getDueArabicForms();
+    const learningForms = getLearningArabicForms();
+    const dueForms = getDueAndNewForms(learningForms);
     const cards = getFlashCards(dueForms);
     // Alternate card modes: most are ar-to-en, ~30% en-to-ar
     return shuffle(cards).map((card) => ({
@@ -45,7 +46,8 @@ export default function ReviewSessionScreen() {
 
   const record = useMemo(() => {
     if (isFinished) return null;
-    return getReviewRecord(current.card.arabic);
+    // Use existing record or create a default for new cards
+    return getReviewRecord(current.card.arabic) ?? defaultReviewRecord();
   }, [index, isFinished]);
 
   const intervals = useMemo(() => {

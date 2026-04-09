@@ -70,13 +70,12 @@ export function getFlashCards(arabicForms: string[]): FlashCard[] {
 }
 
 /**
- * Get all "learning" words as FlashCards (for initial sync).
- * Scans all pages and returns unique Arabic forms whose status is "learning".
+ * Get all unique Arabic forms whose word-status is "learning".
+ * Scans all 604 pages. This is the source of truth for the flashcard deck.
  */
-export function getLearningFlashCards(): FlashCard[] {
-  const index = ensureIndex();
+export function getLearningArabicForms(): string[] {
   const seen = new Set<string>();
-  const cards: FlashCard[] = [];
+  const forms: string[] = [];
 
   for (let p = 1; p <= 604; p++) {
     const page = getPage(p);
@@ -88,12 +87,11 @@ export function getLearningFlashCards(): FlashCard[] {
         seen.add(word.a);
 
         if (getWordStatus(word) === 'learning') {
-          const card = index.get(word.a);
-          if (card) cards.push(card);
+          forms.push(word.a);
         }
       }
     }
   }
 
-  return cards;
+  return forms;
 }

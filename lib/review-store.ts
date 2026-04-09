@@ -1,7 +1,6 @@
 import 'expo-sqlite/localStorage/install';
 import type { ReviewRecord } from '@/types/quran';
 import { isDue, defaultReviewRecord } from '@/lib/srs';
-import { onWordStatusSet } from '@/lib/word-status';
 
 const STORAGE_KEY = 'reviews';
 const STATS_KEY = 'review-stats';
@@ -56,35 +55,31 @@ export function removeReviewRecord(arabic: string): void {
   notify();
 }
 
-/** Create a review record for a newly "learning" word (if it doesn't already exist) */
-export function ensureReviewRecord(arabic: string): void {
-  if (!getStore()[arabic]) {
-    getStore()[arabic] = defaultReviewRecord();
-    scheduleSave();
-    notify();
+/**
+ * Given all "learning" Arabic forms (from word-status), return those that are
+ * due for review: either new (no review record) or have a due record.
+ */
+export function getDueAndNewForms(learningForms: string[]): string[] {
+  const store = getStore();
+  const result: string[] = [];
+  for (const arabic of learningForms) {
+    const record = store[arabic];
+    if (!record || isDue(record)) {
+      result.push(arabic);
+    }
   }
+  return result;
 }
 
-export function getDueCount(): number {
+/** Count how many learning forms are due or new */
+export function countDueAndNew(learningForms: string[]): number {
   const store = getStore();
   let count = 0;
-  for (const record of Object.values(store)) {
-    if (isDue(record)) count++;
+  for (const arabic of learningForms) {
+    const record = store[arabic];
+    if (!record || isDue(record)) count++;
   }
   return count;
-}
-
-export function getDueArabicForms(): string[] {
-  const store = getStore();
-  const due: string[] = [];
-  for (const [arabic, record] of Object.entries(store)) {
-    if (isDue(record)) due.push(arabic);
-  }
-  return due;
-}
-
-export function getAllReviewedForms(): string[] {
-  return Object.keys(getStore());
 }
 
 // === Daily stats ===
@@ -145,16 +140,3 @@ export function getStreak(): number {
   }
   return streak;
 }
-
-// === Auto-sync: word status changes → review records ===
-
-onWordStatusSet((arabic, status) => {
-  if (status === 'learning') {
-    ensureReviewRecord(arabic);
-  } else {
-    // "new" or "known" (manually set) → remove from flashcard deck
-    if (getReviewRecord(arabic)) {
-      removeReviewRecord(arabic);
-    }
-  }
-});
