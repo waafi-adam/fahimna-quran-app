@@ -43,6 +43,7 @@ export default function WordUsagesScreen() {
           lemmaId={lemmaIdNum}
           rootId={rootIdNum}
           initialTab={initialTab}
+          focusArabic={arabic}
           language={language}
           colors={colors}
         />

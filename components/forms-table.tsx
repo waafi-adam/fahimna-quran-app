@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Animated } from 'react-native';
 import type { Colors } from '@/lib/theme';
 import { resolveOccurrences, highlightInText } from '@/lib/occurrences';
 import type { Language, DerivedForm } from '@/types/quran';
@@ -40,7 +40,7 @@ type FormsTableProps = {
   /** Header arabic text (lemma or root), optional */
   headerArabic?: string;
   headerTotal?: number;
-  /** Highlight a specific row (word-sheet use case) */
+  /** Highlight a specific row persistently (word-sheet current word) */
   currentArabic?: string;
   colors: Colors;
   language: Language;
@@ -52,6 +52,8 @@ type FormsTableProps = {
   onFormPress?: (row: FormRow) => void;
   /** Seed the expanded row on mount (e.g., Exact tab auto-expand) */
   defaultExpandedArabic?: string;
+  /** Temporarily highlight this row on mount (fades out after ~1.8s) and scroll to it */
+  highlightArabic?: string;
 };
 
 function OccurrenceList({
@@ -151,20 +153,36 @@ export default function FormsTable({
   maxExpandedRowHeight = 220,
   onFormPress,
   defaultExpandedArabic,
+  highlightArabic,
 }: FormsTableProps) {
   const scrollRef = useRef<ScrollView>(null);
-  const [expandedArabic, setExpandedArabic] = useState<string | null>(defaultExpandedArabic ?? null);
+  const [expandedArabic, setExpandedArabic] = useState<string | null>(
+    defaultExpandedArabic ?? highlightArabic ?? null,
+  );
 
-  // Scroll to current row (word-sheet use case)
+  // Temporary highlight fades from accent bg back to transparent over ~1.8s
+  const highlightAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!currentArabic) return;
-    const idx = rows.findIndex((r) => r.arabic === currentArabic);
+    if (!highlightArabic) return;
+    highlightAnim.setValue(1);
+    Animated.timing(highlightAnim, {
+      toValue: 0,
+      duration: 1800,
+      useNativeDriver: false,
+    }).start();
+  }, [highlightArabic, highlightAnim]);
+
+  // Scroll to current row (word-sheet) or focused row (from word-sheet navigation)
+  useEffect(() => {
+    const target = highlightArabic ?? currentArabic;
+    if (!target) return;
+    const idx = rows.findIndex((r) => r.arabic === target);
     if (idx > 0) {
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo({ y: idx * FORM_ROW_HEIGHT, animated: false });
       });
     }
-  }, [rows, currentArabic]);
+  }, [rows, currentArabic, highlightArabic]);
 
   const handleRowPress = useCallback(
     (row: FormRow) => {
@@ -198,22 +216,38 @@ export default function FormsTable({
         {rows.map((row) => {
           const isCurrent = row.arabic === currentArabic;
           const isExpanded = expandableRows && expandedArabic === row.arabic;
+          const isHighlightTarget = row.arabic === highlightArabic;
+
+          // Animated background: temporary highlight fades out; otherwise use
+          // persistent current/accent bg, or transparent.
+          const animatedBackground = isHighlightTarget
+            ? highlightAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [isCurrent ? colors.accentBg : 'transparent', colors.accentBg],
+              })
+            : isCurrent
+              ? colors.accentBg
+              : 'transparent';
 
           return (
             <View key={row.arabic}>
-              <Pressable
-                onPress={() => handleRowPress(row)}
+              <Animated.View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  height: FORM_ROW_HEIGHT,
-                  paddingHorizontal: 12,
                   borderRadius: 8,
-                  backgroundColor: isCurrent ? colors.accentBg : 'transparent',
-                  borderLeftWidth: row.isLearning ? 4 : 0,
-                  borderLeftColor: row.isLearning ? colors.accent : 'transparent',
+                  backgroundColor: animatedBackground,
                 }}
               >
+                <Pressable
+                  onPress={() => handleRowPress(row)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    height: FORM_ROW_HEIGHT,
+                    paddingHorizontal: 12,
+                    borderLeftWidth: row.isLearning ? 4 : 0,
+                    borderLeftColor: row.isLearning ? colors.accent : 'transparent',
+                  }}
+                >
                 <Text
                   style={{ flex: 1, fontSize: 13, color: colors.textSecondary }}
                   numberOfLines={1}
@@ -238,7 +272,8 @@ export default function FormsTable({
                     {isExpanded ? '▲' : '▼'}
                   </Text>
                 )}
-              </Pressable>
+                </Pressable>
+              </Animated.View>
 
               {isExpanded && (
                 <OccurrenceList

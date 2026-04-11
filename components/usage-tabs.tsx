@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { useMemo, useState, useRef, useCallback } from 'react';
+import { View, Text, Pressable, Animated } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { Colors } from '@/lib/theme';
 import FormsTable, { type FormRow, getFormMeaning } from '@/components/forms-table';
 import { getLemmaById, getRootById, getLemmaForms, getRootForms, getExactCount } from '@/lib/quran-data';
@@ -22,6 +23,11 @@ type UsageTabsProps = {
   colors: Colors;
   /** Accent-stripe highlight set for rows whose arabic is in here (learning forms) */
   learningForms?: Set<string>;
+  /**
+   * When the user arrived by tapping a specific form (e.g., from WordSheet),
+   * auto-expand that row and apply a temporary highlight on whichever tab contains it.
+   */
+  focusArabic?: string;
 };
 
 export default function UsageTabs({
@@ -34,6 +40,7 @@ export default function UsageTabs({
   language,
   colors,
   learningForms,
+  focusArabic,
 }: UsageTabsProps) {
   // Build rows for each tab. Locations are sampled from the exact card index.
   const exactRows: FormRow[] = useMemo(() => {
@@ -89,10 +96,30 @@ export default function UsageTabs({
     return tabs;
   }, [hideExactTab, exactRows.length, lemmaRows.length, rootRows.length]);
 
-  const [activeTab, setActiveTab] = useState<UsageTab>(() => {
-    if (initialTab && availableTabs.includes(initialTab)) return initialTab;
-    return availableTabs[0] ?? 'exact';
+  const [tabIndex, setTabIndex] = useState(() => {
+    if (initialTab) {
+      const idx = availableTabs.indexOf(initialTab);
+      if (idx >= 0) return idx;
+    }
+    return 0;
   });
+
+  // Swipe animation: slide the tab content horizontally on change
+  const tabAnim = useRef(new Animated.Value(0)).current;
+  const prevTabIndex = useRef(tabIndex);
+
+  const animateToTab = useCallback((newIndex: number) => {
+    if (newIndex === prevTabIndex.current) return;
+    const direction = newIndex > prevTabIndex.current ? 1 : -1;
+    prevTabIndex.current = newIndex;
+    tabAnim.setValue(direction * 40);
+    setTabIndex(newIndex);
+    Animated.timing(tabAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [tabAnim]);
 
   if (availableTabs.length === 0) {
     return (
@@ -135,10 +162,30 @@ export default function UsageTabs({
     }
   };
 
+  const activeTab = availableTabs[tabIndex];
   const activeRows = rowsForTab(activeTab);
   const header = headerForTab(activeTab);
-  // Auto-expand the single row on the Exact tab so the ayahs show immediately
-  const defaultExpanded = activeTab === 'exact' ? arabic : undefined;
+
+  // Default expanded + highlight target per tab:
+  // - Exact tab: auto-expand the single row (its arabic)
+  // - Lemma/Root tabs: if a focusArabic was provided and it matches a row here,
+  //   auto-expand + briefly highlight it
+  const activeFocus = activeTab !== 'exact' && focusArabic && activeRows.some((r) => r.arabic === focusArabic)
+    ? focusArabic
+    : undefined;
+  const defaultExpanded = activeTab === 'exact' ? arabic : activeFocus;
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-10, 10])
+    .onEnd((e) => {
+      if (e.velocityX < -300 && tabIndex < availableTabs.length - 1) {
+        animateToTab(tabIndex + 1);
+      } else if (e.velocityX > 300 && tabIndex > 0) {
+        animateToTab(tabIndex - 1);
+      }
+    })
+    .runOnJS(true);
 
   return (
     <View style={{ flex: 1 }}>
@@ -150,12 +197,12 @@ export default function UsageTabs({
             borderBottomColor: colors.border,
           }}
         >
-          {availableTabs.map((tab) => {
-            const isActive = tab === activeTab;
+          {availableTabs.map((tab, i) => {
+            const isActive = i === tabIndex;
             return (
               <Pressable
                 key={tab}
-                onPress={() => setActiveTab(tab)}
+                onPress={() => animateToTab(i)}
                 style={{
                   flex: 1,
                   paddingVertical: 10,
@@ -179,16 +226,21 @@ export default function UsageTabs({
         </View>
       )}
 
-      <FormsTable
-        key={activeTab}
-        rows={activeRows}
-        headerArabic={header.arabic}
-        headerTotal={header.total}
-        colors={colors}
-        language={language}
-        expandableRows
-        defaultExpandedArabic={defaultExpanded}
-      />
+      <GestureDetector gesture={swipeGesture}>
+        <Animated.View style={{ flex: 1, transform: [{ translateX: tabAnim }] }}>
+          <FormsTable
+            key={activeTab}
+            rows={activeRows}
+            headerArabic={header.arabic}
+            headerTotal={header.total}
+            colors={colors}
+            language={language}
+            expandableRows
+            defaultExpandedArabic={defaultExpanded}
+            highlightArabic={activeFocus}
+          />
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
