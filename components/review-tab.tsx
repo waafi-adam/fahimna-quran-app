@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDueCount } from '@/hooks/use-review';
 import { getTodayStats, getStreak } from '@/lib/review-store';
+import { useStorage } from '@/hooks/use-storage';
 import { useTheme } from '@/lib/theme';
+import type { FlashcardMode } from '@/types/quran';
 
 function StatBox({ label, value, icon, colors }: {
   label: string;
@@ -28,12 +30,63 @@ function StatBox({ label, value, icon, colors }: {
   );
 }
 
+function ModeToggle({ mode, setMode, colors }: {
+  mode: FlashcardMode;
+  setMode: (m: FlashcardMode) => void;
+  colors: any;
+}) {
+  const options: { key: FlashcardMode; label: string }[] = [
+    { key: 'exact', label: 'Exact' },
+    { key: 'lemma', label: 'Lemma' },
+  ];
+  return (
+    <View style={{
+      flexDirection: 'row',
+      padding: 4,
+      borderRadius: 10,
+      borderCurve: 'continuous',
+      backgroundColor: colors.bgSecondary,
+      marginBottom: 16,
+    }}>
+      {options.map((opt) => {
+        const isActive = mode === opt.key;
+        return (
+          <Pressable
+            key={opt.key}
+            onPress={() => setMode(opt.key)}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              alignItems: 'center',
+              borderRadius: 8,
+              backgroundColor: isActive ? colors.bg : 'transparent',
+            }}
+          >
+            <Text style={{
+              fontSize: 13,
+              fontWeight: isActive ? '700' : '500',
+              color: isActive ? colors.text : colors.textMuted,
+            }}>
+              {opt.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function ReviewTab() {
   const router = useRouter();
   const { colors } = useTheme();
-  const dueCount = useDueCount();
+  const [mode, setMode] = useStorage<FlashcardMode>('flashcard-mode', 'exact');
+  const dueCount = useDueCount(mode);
   const todayStats = getTodayStats();
   const streak = getStreak();
+
+  const dueLabel = mode === 'lemma'
+    ? (dueCount === 1 ? 'lemma due for review' : 'lemmas due for review')
+    : (dueCount === 1 ? 'word due for review' : 'words due for review');
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
@@ -44,13 +97,13 @@ export default function ReviewTab() {
         borderRadius: 16,
         borderCurve: 'continuous',
         backgroundColor: colors.bgSecondary,
-        marginBottom: 20,
+        marginBottom: 16,
       }}>
         <Text style={{ fontSize: 48, fontWeight: '800', color: colors.text }}>
           {dueCount}
         </Text>
         <Text style={{ fontSize: 15, color: colors.textMuted, marginTop: 4 }}>
-          {dueCount === 1 ? 'word due for review' : 'words due for review'}
+          {dueLabel}
         </Text>
 
         <Pressable
@@ -79,6 +132,9 @@ export default function ReviewTab() {
         </Pressable>
       </View>
 
+      {/* Mode toggle */}
+      <ModeToggle mode={mode} setMode={setMode} colors={colors} />
+
       {/* Stats row */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <StatBox
@@ -106,7 +162,7 @@ export default function ReviewTab() {
         <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 20 }}>
           <Ionicons name="school-outline" size={36} color={colors.borderInactive} style={{ marginBottom: 12 }} />
           <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 }}>
-            Mark words as "Learning" while reading to add them to your flashcard deck.
+            Mark words as &quot;Learning&quot; while reading to add them to your flashcard deck.
           </Text>
         </View>
       )}

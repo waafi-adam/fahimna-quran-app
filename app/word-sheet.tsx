@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,17 +8,19 @@ import { getPage, getRootById, getLemmaById, isVerseMarker, getRootForms, getLem
 import { getWordMeaning } from '@/lib/page-helpers';
 import { setWordStatus } from '@/lib/word-status';
 import { playWord } from '@/lib/audio-player';
-import { useTheme, type Colors } from '@/lib/theme';
+import { useTheme } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
 import WordSegments from '@/components/word-segments';
 import MorphologyTable from '@/components/morphology-table';
+import FormsTable, {
+  FORM_ROW_HEIGHT,
+  HEADER_HEIGHT,
+  COLLAPSED_ROWS,
+  EXPANDED_ROWS,
+  derivedFormToRow,
+  type FormRow,
+} from '@/components/forms-table';
 import type { Language, Word, AyahLine, WordStatus, PropagationMode, DerivedForm } from '@/types/quran';
-
-const LANG_INDEX: Record<string, number> = { en: 1, id: 2, ur: 3 };
-const FORM_ROW_HEIGHT = 44;
-const HEADER_HEIGHT = 48;
-const COLLAPSED_ROWS = 3;
-const EXPANDED_ROWS = 8;
 
 type FormsTab = 'exact' | 'lemma' | 'root';
 
@@ -32,91 +34,6 @@ function findWord(pageNum: number, surah: number, verse: number, wordPos: number
     }
   }
   return null;
-}
-
-/** Get meaning from a DerivedForm tuple based on language */
-function getFormMeaning(form: DerivedForm, lang: Language): string {
-  return form[LANG_INDEX[lang]] || form[1];
-}
-
-/** A single tab's content: header info + scrollable forms list */
-function FormsTabContent({
-  forms,
-  arabic,
-  total,
-  currentArabic,
-  language,
-  colors,
-  onFormPress,
-}: {
-  forms: DerivedForm[];
-  arabic: string;
-  total: number;
-  currentArabic: string;
-  language: Language;
-  colors: Colors;
-  onFormPress: (form: DerivedForm) => void;
-}) {
-  const formsScrollRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    const idx = forms.findIndex((f) => f[0] === currentArabic);
-    if (idx > 0) {
-      requestAnimationFrame(() => {
-        formsScrollRef.current?.scrollTo({ y: idx * FORM_ROW_HEIGHT, animated: false });
-      });
-    }
-  }, [forms, currentArabic]);
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Header info */}
-      <View style={{ height: HEADER_HEIGHT, justifyContent: 'center', paddingHorizontal: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18, color: colors.text }}>
-            {arabic}
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textMuted }}>
-            {total} times, {forms.length} {forms.length === 1 ? 'form' : 'forms'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Forms list */}
-      <ScrollView ref={formsScrollRef} nestedScrollEnabled style={{ flex: 1 }}>
-        {forms.map((form) => {
-          const isCurrentForm = form[0] === currentArabic;
-          return (
-            <Pressable
-              key={form[0]}
-              onPress={() => onFormPress(form)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                height: FORM_ROW_HEIGHT,
-                paddingHorizontal: 12,
-                borderRadius: 8,
-                backgroundColor: isCurrentForm ? colors.accentBg : 'transparent',
-              }}
-            >
-              <Text
-                style={{ flex: 1, fontSize: 13, color: colors.textSecondary }}
-                numberOfLines={1}
-              >
-                {getFormMeaning(form, language)}
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted, marginHorizontal: 12, fontVariant: ['tabular-nums'] }}>
-                {form[4]}×
-              </Text>
-              <Text style={{ fontFamily: 'UthmanicHafs', fontSize: 18, color: colors.text }}>
-                {form[0]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
 }
 
 export default function WordSheet() {
@@ -179,19 +96,22 @@ export default function WordSheet() {
     }).start();
   }, [tabAnim]);
 
-  const tabData: Record<FormsTab, { forms: DerivedForm[]; arabic: string; total: number }> = {
-    exact: { forms: exactForms, arabic: w.a, total: exactCount },
-    lemma: { forms: lemmaForms, arabic: lemma?.arabic ?? '', total: lemma?.count ?? 0 },
-    root: { forms: rootForms, arabic: root?.arabic ?? '', total: root?.count ?? 0 },
+  const toRows = (forms: DerivedForm[]): FormRow[] =>
+    forms.map((f) => derivedFormToRow(f, language));
+
+  const tabData: Record<FormsTab, { rows: FormRow[]; arabic: string; total: number }> = {
+    exact: { rows: toRows(exactForms), arabic: w.a, total: exactCount },
+    lemma: { rows: toRows(lemmaForms), arabic: lemma?.arabic ?? '', total: lemma?.count ?? 0 },
+    root: { rows: toRows(rootForms), arabic: root?.arabic ?? '', total: root?.count ?? 0 },
   };
 
   const tabLabels: Record<FormsTab, string> = { exact: 'Exact', lemma: 'Lemma', root: 'Root' };
 
   // Determine if expand toggle is needed (any tab has more forms than collapsed rows)
   const maxForms = Math.max(
-    exactForms.length,
-    lemmaForms.length,
-    rootForms.length,
+    tabData.exact.rows.length,
+    tabData.lemma.rows.length,
+    tabData.root.rows.length,
   );
   const showExpandToggle = maxForms > COLLAPSED_ROWS;
   const visibleRows = formsExpanded ? EXPANDED_ROWS : COLLAPSED_ROWS;
@@ -209,11 +129,11 @@ export default function WordSheet() {
   };
 
   const handleFormPress = useCallback(
-    (form: DerivedForm) => {
+    (row: FormRow) => {
       if (swiping.current) return;
       const activeTab = availableTabs[tabIndex];
       router.push(
-        `/word-usages?arabic=${encodeURIComponent(form[0])}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}&surah=${w.s}&ayah=${w.v}&tab=${activeTab}`,
+        `/word-usages?arabic=${encodeURIComponent(row.arabic)}&rootId=${root?.id ?? ''}&lemmaId=${lemma?.id ?? ''}&surah=${w.s}&ayah=${w.v}&tab=${activeTab}`,
       );
     },
     [router, root, lemma, availableTabs, tabIndex],
@@ -407,10 +327,10 @@ export default function WordSheet() {
             .runOnJS(true)
           }>
             <Animated.View style={{ height: pagerHeight, transform: [{ translateX: tabAnim }] }}>
-              <FormsTabContent
-                forms={tabData[availableTabs[tabIndex]].forms}
-                arabic={tabData[availableTabs[tabIndex]].arabic}
-                total={tabData[availableTabs[tabIndex]].total}
+              <FormsTable
+                rows={tabData[availableTabs[tabIndex]].rows}
+                headerArabic={tabData[availableTabs[tabIndex]].arabic}
+                headerTotal={tabData[availableTabs[tabIndex]].total}
                 currentArabic={w.a}
                 language={language}
                 colors={colors}

@@ -5,8 +5,13 @@ import { isDue, defaultReviewRecord } from '@/lib/srs';
 const STORAGE_KEY = 'reviews';
 const STATS_KEY = 'review-stats';
 
-// In-memory store — keyed by exact Arabic form
+// In-memory store — keyed by a generic string:
+//   - Exact cards use the raw Arabic form
+//   - Lemma cards use `lemma:${lemmaId}`
+// Arabic forms never contain ASCII ':' so the prefix is collision-safe.
 let _records: Record<string, ReviewRecord> | null = null;
+
+export const lemmaReviewKey = (lemmaId: number): string => `lemma:${lemmaId}`;
 
 function getStore(): Record<string, ReviewRecord> {
   if (_records == null) {
@@ -39,48 +44,52 @@ export function onReviewChange(callback: Listener): () => void {
 
 // === Public API ===
 
-export function getReviewRecord(arabic: string): ReviewRecord | null {
-  return getStore()[arabic] ?? null;
+export function getReviewRecord(key: string): ReviewRecord | null {
+  return getStore()[key] ?? null;
 }
 
-export function setReviewRecord(arabic: string, record: ReviewRecord): void {
-  getStore()[arabic] = record;
+export function setReviewRecord(key: string, record: ReviewRecord): void {
+  getStore()[key] = record;
   scheduleSave();
   notify();
 }
 
-export function removeReviewRecord(arabic: string): void {
-  delete getStore()[arabic];
+export function removeReviewRecord(key: string): void {
+  delete getStore()[key];
   scheduleSave();
   notify();
 }
 
 /**
- * Given all "learning" Arabic forms (from word-status), return those that are
- * due for review: either new (no review record) or have a due record.
+ * Given a list of review keys (exact arabic forms or `lemma:<id>`), return
+ * those that are due for review: either new (no record) or with a due record.
  */
-export function getDueAndNewForms(learningForms: string[]): string[] {
+export function getDueAndNewKeys(keys: string[]): string[] {
   const store = getStore();
   const result: string[] = [];
-  for (const arabic of learningForms) {
-    const record = store[arabic];
+  for (const key of keys) {
+    const record = store[key];
     if (!record || isDue(record)) {
-      result.push(arabic);
+      result.push(key);
     }
   }
   return result;
 }
 
-/** Count how many learning forms are due or new */
-export function countDueAndNew(learningForms: string[]): number {
+/** Count how many keys are due or new */
+export function countDueAndNewKeys(keys: string[]): number {
   const store = getStore();
   let count = 0;
-  for (const arabic of learningForms) {
-    const record = store[arabic];
+  for (const key of keys) {
+    const record = store[key];
     if (!record || isDue(record)) count++;
   }
   return count;
 }
+
+// --- Back-compat aliases (exact-mode API) ---
+export const getDueAndNewForms = getDueAndNewKeys;
+export const countDueAndNew = countDueAndNewKeys;
 
 // === Daily stats ===
 

@@ -5,7 +5,7 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { useStorage } from '@/hooks/use-storage';
 import { useTheme, type Colors } from '@/lib/theme';
 import { resetAllProgress } from '@/lib/word-status';
-import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode, SwipeAction, Reciter } from '@/types/quran';
+import type { ReaderLayout, ReaderMode, Language, PropagationMode, ThemeMode, SwipeAction, Reciter, FlashcardMode } from '@/types/quran';
 import recitersData from '@/assets/data/audio/reciters.json';
 
 // --- Option data ---
@@ -36,6 +36,11 @@ const PROPAGATIONS: { key: PropagationMode; icon: keyof typeof Ionicons.glyphMap
   { key: 'lemma', icon: 'layers-outline', title: 'Lemma', subtitle: 'Words with the same base form share status' },
   { key: 'root', icon: 'git-branch-outline', title: 'Root', subtitle: 'Words from the same root share status' },
   { key: 'exact', icon: 'locate-outline', title: 'Exact', subtitle: 'Only the exact word is affected' },
+];
+
+const FLASHCARD_MODES: { key: FlashcardMode; icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }[] = [
+  { key: 'exact', icon: 'locate-outline', title: 'Exact Words', subtitle: 'One card per exact word form' },
+  { key: 'lemma', icon: 'layers-outline', title: 'Lemma Groups', subtitle: 'One card per lemma — graduating marks all related forms known' },
 ];
 
 const THEMES: { key: ThemeMode; icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string }[] = [
@@ -181,6 +186,7 @@ export default function SettingsScreen() {
   const [mode, setMode] = useStorage<ReaderMode>('readerMode', 'reading');
   const [language, setLanguage] = useStorage<Language>('language', 'en');
   const [propagation, setPropagation] = useStorage<PropagationMode>('propagation', 'lemma');
+  const [flashcardMode, setFlashcardMode] = useStorage<FlashcardMode>('flashcard-mode', 'exact');
   const [swipeAction, setSwipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
   const [showGrammarLabels, setShowGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
   const [reciter, setReciter] = useStorage('reciter', 'husary-murattal');
@@ -264,6 +270,22 @@ export default function SettingsScreen() {
       {/* Reciter */}
       <SectionHeader label="RECITER" colors={colors} />
       <ReciterDropdown reciter={reciter} setReciter={setReciter} colors={colors} />
+
+      {/* Flashcard mode */}
+      <SectionHeader label="FLASHCARD MODE" colors={colors} />
+      <View style={{ paddingHorizontal: 20, gap: 8 }}>
+        {FLASHCARD_MODES.map((item) => (
+          <RadioCard
+            key={item.key}
+            selected={flashcardMode === item.key}
+            onPress={() => setFlashcardMode(item.key)}
+            icon={item.icon}
+            title={item.title}
+            subtitle={item.subtitle}
+            colors={colors}
+          />
+        ))}
+      </View>
 
       {/* Learning */}
       <SectionHeader label="WORD PROPAGATION" colors={colors} />

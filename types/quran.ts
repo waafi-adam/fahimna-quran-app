@@ -254,7 +254,10 @@ export type ReviewRecord = {
 /** Forgot=0, Hard=1, Good=2, Easy=3 */
 export type ReviewGrade = 0 | 1 | 2 | 3;
 
-export type FlashCard = {
+export type FlashcardMode = 'exact' | 'lemma';
+
+export type ExactFlashCard = {
+  kind: 'exact';
   /** Exact Arabic word form */
   arabic: string;
   /** All distinct WBW meanings for this form */
@@ -264,6 +267,35 @@ export type FlashCard = {
   /** Sample locations ["s:v:w", ...] for context */
   locations: string[];
 };
+
+export type LemmaFormEntry = {
+  /** Exact Arabic form */
+  arabic: string;
+  /** Meaning in the current language */
+  meaning: string;
+  /** Quran-wide count of this form */
+  count: number;
+  /** True if this form currently has 'learning' status */
+  isLearning: boolean;
+  /** Sampled locations (up to 5) of this form */
+  locations: string[];
+};
+
+export type LemmaFlashCard = {
+  kind: 'lemma';
+  lemmaId: number;
+  /** Canonical lemma citation form */
+  lemmaArabic: string;
+  lemmaArabicClean: string;
+  /** Total Quran-wide count across all forms */
+  totalCount: number;
+  /** All forms of the lemma, sorted learning-first then by count desc */
+  forms: LemmaFormEntry[];
+  /** Arabic of forms currently in 'learning' status — what graduation collapses */
+  learningForms: string[];
+};
+
+export type FlashCard = ExactFlashCard | LemmaFlashCard;
 
 // === Grammar / Morphology (morphology/{1-114}.json) ===
 
