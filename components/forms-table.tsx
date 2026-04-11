@@ -50,6 +50,8 @@ type FormsTableProps = {
   maxExpandedRowHeight?: number;
   /** When expandableRows is false, called on row tap */
   onFormPress?: (row: FormRow) => void;
+  /** Seed the expanded row on mount (e.g., Exact tab auto-expand) */
+  defaultExpandedArabic?: string;
 };
 
 function OccurrenceList({
@@ -148,9 +150,10 @@ export default function FormsTable({
   expandableRows = false,
   maxExpandedRowHeight = 220,
   onFormPress,
+  defaultExpandedArabic,
 }: FormsTableProps) {
   const scrollRef = useRef<ScrollView>(null);
-  const [expandedArabic, setExpandedArabic] = useState<string | null>(null);
+  const [expandedArabic, setExpandedArabic] = useState<string | null>(defaultExpandedArabic ?? null);
 
   // Scroll to current row (word-sheet use case)
   useEffect(() => {

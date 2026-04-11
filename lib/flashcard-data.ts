@@ -35,6 +35,8 @@ function buildCardIndex(): Map<string, ExactFlashCard> {
             meanings: [word.m],
             transliteration: word.t,
             locations: [`${word.s}:${word.v}:${word.w}`],
+            lemmaId: word.li,
+            rootId: word.ri,
           });
         }
       }

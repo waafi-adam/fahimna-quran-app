@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,8 +23,7 @@ import {
 } from '@/lib/flashcard-data';
 import { calculateNextReview, previewIntervals, shouldGraduate, defaultReviewRecord } from '@/lib/srs';
 import { setWordStatus } from '@/lib/word-status';
-import { resolveOccurrences, highlightInText, type Occurrence } from '@/lib/occurrences';
-import FormsTable, { type FormRow } from '@/components/forms-table';
+import UsageTabs from '@/components/usage-tabs';
 import type {
   FlashCard,
   ExactFlashCard,
@@ -176,7 +175,6 @@ export default function ReviewSessionScreen() {
         ) : (
           <CardBack
             card={current.card}
-            direction={current.direction}
             language={language}
             colors={colors}
           />
@@ -286,67 +284,66 @@ function LemmaFront({ card, colors }: { card: LemmaFlashCard; colors: any }) {
 
 // === Card back ===
 
-function CardBack({ card, direction, language, colors }: {
+function CardBack({ card, language, colors }: {
   card: FlashCard;
-  direction: CardDirection;
   language: Language;
   colors: any;
 }) {
   if (card.kind === 'lemma') {
     return <LemmaBack card={card} language={language} colors={colors} />;
   }
-  return <ExactBack card={card} direction={direction} language={language} colors={colors} />;
+  return <ExactBack card={card} language={language} colors={colors} />;
 }
 
-function ExactBack({ card, direction, language, colors }: {
+function ExactBack({ card, language, colors }: {
   card: ExactFlashCard;
-  direction: CardDirection;
   language: Language;
   colors: any;
 }) {
   const meaningsInline = card.meanings.join(' / ');
-  const occurrences = useMemo(
-    () => resolveOccurrences(card.locations, null, new Set([card.arabic]), language),
-    [card.locations, card.arabic, language],
-  );
 
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
-      <Text style={{ fontSize: 40, fontFamily: 'UthmanicHafs', color: colors.text, textAlign: 'center' }}>
+      <Text style={{ fontSize: 36, fontFamily: 'UthmanicHafs', color: colors.text, textAlign: 'center' }}>
         {card.arabic}
       </Text>
       <View style={{
-        marginTop: 16,
-        padding: 16,
+        marginTop: 12,
+        padding: 14,
         borderRadius: 12,
         borderCurve: 'continuous',
         backgroundColor: colors.bgSecondary,
         width: '100%',
       }}>
-        <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
           {meaningsInline}
         </Text>
         {card.transliteration ? (
-          <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center', marginTop: 8 }}>
+          <Text style={{ fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 6 }}>
             {card.transliteration}
           </Text>
         ) : null}
       </View>
 
-      {occurrences.length > 0 && (
-        <View style={{ width: '100%', marginTop: 16, flex: 1 }}>
-          <Text style={{
-            fontSize: 11,
-            fontWeight: '600',
-            color: colors.textFaint,
-            letterSpacing: 0.5,
-            marginBottom: 6,
-          }}>
-            EXAMPLES
-          </Text>
-          <ExamplesBlock occurrences={occurrences} colors={colors} />
-        </View>
-      )}
+      <View style={{
+        width: '100%',
+        marginTop: 14,
+        flex: 1,
+        backgroundColor: colors.bgSecondary,
+        borderRadius: 12,
+        borderCurve: 'continuous',
+        overflow: 'hidden',
+      }}>
+        <UsageTabs
+          arabic={card.arabic}
+          exactMeaning={meaningsInline}
+          lemmaId={card.lemmaId}
+          rootId={card.rootId}
+          initialTab="exact"
+          language={language}
+          colors={colors}
+        />
+      </View>
     </View>
   );
 }
@@ -356,20 +353,19 @@ function LemmaBack({ card, language, colors }: {
   language: Language;
   colors: any;
 }) {
-  const rows: FormRow[] = useMemo(
-    () => card.forms.map((f) => ({
-      arabic: f.arabic,
-      meaning: f.meaning,
-      count: f.count,
-      isLearning: f.isLearning,
-      locations: f.locations,
-    })),
-    [card.forms],
-  );
+  const learningSet = useMemo(() => new Set(card.learningForms), [card.learningForms]);
+  // Pick a rootId from any learning form's exact card (all share same lemma, often same root)
+  const rootId = useMemo(() => {
+    for (const arabic of card.learningForms) {
+      const exact = getFlashCard(arabic);
+      if (exact?.rootId != null) return exact.rootId;
+    }
+    return undefined;
+  }, [card.learningForms]);
 
   return (
     <View style={{ flex: 1, width: '100%' }}>
-      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+      <View style={{ alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ fontSize: 32, fontFamily: 'UthmanicHafs', color: colors.text }}>
           {card.lemmaArabic}
         </Text>
@@ -386,82 +382,19 @@ function LemmaBack({ card, language, colors }: {
         borderCurve: 'continuous',
         overflow: 'hidden',
       }}>
-        <FormsTable
-          rows={rows}
-          colors={colors}
+        <UsageTabs
+          arabic={card.lemmaArabic}
+          exactMeaning=""
+          lemmaId={card.lemmaId}
+          rootId={rootId}
+          initialTab="lemma"
+          hideExactTab
+          learningForms={learningSet}
           language={language}
-          expandableRows
-          maxExpandedRowHeight={220}
+          colors={colors}
         />
       </View>
     </View>
-  );
-}
-
-// === Examples block (exact reveal) ===
-
-function ExamplesBlock({ occurrences, colors }: {
-  occurrences: Occurrence[];
-  colors: any;
-}) {
-  return (
-    <ScrollView
-      nestedScrollEnabled
-      style={{
-        flex: 1,
-        backgroundColor: colors.bgSecondary,
-        borderRadius: 12,
-        borderCurve: 'continuous',
-      }}
-      contentContainerStyle={{ paddingVertical: 4 }}
-    >
-      {occurrences.map((item, idx) => {
-        const translationSegments = highlightInText(item.translation, item.wbwMeaning);
-        return (
-          <View
-            key={item.key}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              borderTopWidth: idx > 0 ? 1 : 0,
-              borderTopColor: colors.border,
-            }}
-          >
-            <Text style={{ fontSize: 11, color: colors.textFaint, marginBottom: 4 }}>
-              {item.surah}:{item.ayah}
-            </Text>
-            <Text style={{
-              fontFamily: 'UthmanicHafs',
-              fontSize: 20,
-              color: colors.text,
-              lineHeight: 36,
-              textAlign: 'right',
-            }}>
-              {item.words.map((w, i) => (
-                <Text
-                  key={i}
-                  style={w.isMatch ? { color: colors.audioWordText } : undefined}
-                >
-                  {i > 0 ? ' ' : ''}{w.text}
-                </Text>
-              ))}
-            </Text>
-            {item.translation.length > 0 && (
-              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 6, lineHeight: 18 }}>
-                {translationSegments.map((seg, i) => (
-                  <Text
-                    key={i}
-                    style={seg.bold ? { fontWeight: '700', color: colors.text } : undefined}
-                  >
-                    {seg.text}
-                  </Text>
-                ))}
-              </Text>
-            )}
-          </View>
-        );
-      })}
-    </ScrollView>
   );
 }
 

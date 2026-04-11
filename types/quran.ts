@@ -266,6 +266,10 @@ export type ExactFlashCard = {
   transliteration: string;
   /** Sample locations ["s:v:w", ...] for context */
   locations: string[];
+  /** Lemma id from the first encountered instance */
+  lemmaId?: number;
+  /** Root id from the first encountered instance */
+  rootId?: number;
 };
 
 export type LemmaFormEntry = {
