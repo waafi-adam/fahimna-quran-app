@@ -11,6 +11,7 @@ import {
 } from '@/lib/progress';
 import { useWordStatusVersion } from '@/hooks/use-word-status';
 import ProgressBar from '@/components/progress-bar';
+import ActivityGraph from '@/components/activity-graph';
 import { useTheme } from '@/lib/theme';
 
 function formatNum(n: number): string {
@@ -99,6 +100,20 @@ export default function ProfileScreen() {
         <Text style={{ fontSize: 12, color: colors.textFaint, textAlign: 'center', marginTop: 4 }}>
           {formatNum(overall.total)} total words
         </Text>
+      </View>
+
+      {/* Activity graph */}
+      <View style={{ marginTop: 28, paddingHorizontal: 24 }}>
+        <Text style={{
+          fontSize: 11,
+          fontWeight: '700',
+          color: colors.textFaint,
+          letterSpacing: 0.6,
+          marginBottom: 12,
+        }}>
+          ACTIVITY
+        </Text>
+        <ActivityGraph />
       </View>
 
       {/* Surah progress list */}

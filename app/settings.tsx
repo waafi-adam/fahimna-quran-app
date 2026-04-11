@@ -187,6 +187,7 @@ export default function SettingsScreen() {
   const [language, setLanguage] = useStorage<Language>('language', 'en');
   const [propagation, setPropagation] = useStorage<PropagationMode>('propagation', 'lemma');
   const [flashcardMode, setFlashcardMode] = useStorage<FlashcardMode>('flashcard-mode', 'exact');
+  const [showReviewStrip, setShowReviewStrip] = useStorage<boolean>('show-review-strip', true);
   const [swipeAction, setSwipeAction] = useStorage<SwipeAction>('swipeAction', 'none');
   const [showGrammarLabels, setShowGrammarLabels] = useStorage<boolean>('showGrammarLabels', false);
   const [reciter, setReciter] = useStorage('reciter', 'husary-murattal');
@@ -285,6 +286,14 @@ export default function SettingsScreen() {
             colors={colors}
           />
         ))}
+        <RadioCard
+          selected={showReviewStrip}
+          onPress={() => setShowReviewStrip(!showReviewStrip)}
+          icon="notifications-outline"
+          title="Review Reminder Strip"
+          subtitle={showReviewStrip ? 'Visible on the home screen when words are due' : 'Hidden — use the header icon instead'}
+          colors={colors}
+        />
       </View>
 
       {/* Learning */}

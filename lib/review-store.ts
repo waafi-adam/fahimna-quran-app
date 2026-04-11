@@ -93,36 +93,137 @@ export const countDueAndNew = countDueAndNewKeys;
 
 // === Daily stats ===
 
-type DailyStats = {
+export type DailyStats = {
   date: string; // YYYY-MM-DD
   reviewed: number;
   graduated: number;
+  promoted: number; // new → learning transitions today
+  mastered: number; // new/learning → known transitions today
 };
 
+function emptyStats(date: string): DailyStats {
+  return { date, reviewed: 0, graduated: 0, promoted: 0, mastered: 0 };
+}
+
+/** Coerce any value to a finite number; anything else (object, NaN, undefined) becomes 0. */
+function toNum(v: unknown, warnKey?: string): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  if (__DEV__ && v != null && typeof v !== 'number') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[review-store] non-numeric stat coerced to 0${warnKey ? ` at ${warnKey}` : ''}:`,
+      v,
+    );
+  }
+  return 0;
+}
+
+function ensureFields(raw: unknown, fallbackDate?: string): DailyStats {
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const date = typeof s.date === 'string' ? s.date : (fallbackDate ?? todayKey());
+  return {
+    date,
+    reviewed: toNum(s.reviewed, `${date}.reviewed`),
+    graduated: toNum(s.graduated, `${date}.graduated`),
+    promoted: toNum(s.promoted, `${date}.promoted`),
+    mastered: toNum(s.mastered, `${date}.mastered`),
+  };
+}
+
+function dateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dateKey(new Date());
 }
 
 function getStatsStore(): Record<string, DailyStats> {
-  return JSON.parse(localStorage.getItem(STATS_KEY) ?? '{}');
+  const raw: unknown = JSON.parse(localStorage.getItem(STATS_KEY) ?? '{}');
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<string, DailyStats> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    out[k] = ensureFields(v, k);
+  }
+  return out;
 }
+
+// One-time sanitization on module load: rewrite the stats store through
+// ensureFields so any legacy/corrupt entries get normalized to numbers.
+(function sanitizeStatsStoreOnLoad() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (!raw) return;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    const clean: Record<string, DailyStats> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      clean[k] = ensureFields(v, k);
+    }
+    localStorage.setItem(STATS_KEY, JSON.stringify(clean));
+  } catch {
+    // best-effort — if parsing fails, reset to empty
+    localStorage.setItem(STATS_KEY, '{}');
+  }
+})();
 
 function saveStatsStore(store: Record<string, DailyStats>): void {
   localStorage.setItem(STATS_KEY, JSON.stringify(store));
 }
 
+function bumpToday(field: 'reviewed' | 'graduated' | 'promoted' | 'mastered', by: number): void {
+  if (by <= 0) return;
+  const store = getStatsStore();
+  const key = todayKey();
+  const existing = store[key] ? ensureFields(store[key]) : emptyStats(key);
+  existing[field] += by;
+  store[key] = existing;
+  saveStatsStore(store);
+  listeners.forEach((fn) => fn());
+}
+
 export function recordReview(graduated: boolean): void {
   const store = getStatsStore();
   const key = todayKey();
-  if (!store[key]) store[key] = { date: key, reviewed: 0, graduated: 0 };
-  store[key].reviewed++;
-  if (graduated) store[key].graduated++;
+  const existing = store[key] ? ensureFields(store[key]) : emptyStats(key);
+  existing.reviewed++;
+  if (graduated) existing.graduated++;
+  store[key] = existing;
   saveStatsStore(store);
+  listeners.forEach((fn) => fn());
+}
+
+export function recordPromoted(count = 1): void {
+  bumpToday('promoted', count);
+}
+
+export function recordMastered(count = 1): void {
+  bumpToday('mastered', count);
 }
 
 export function getTodayStats(): DailyStats {
   const store = getStatsStore();
-  return store[todayKey()] ?? { date: todayKey(), reviewed: 0, graduated: 0 };
+  return store[todayKey()] ? ensureFields(store[todayKey()]) : emptyStats(todayKey());
+}
+
+/** Get daily stats for a date range (inclusive), oldest first. Missing days are zeros. */
+export function getDailyStatsRange(fromDate: Date, toDate: Date): DailyStats[] {
+  const store = getStatsStore();
+  const result: DailyStats[] = [];
+  const cursor = new Date(fromDate);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(toDate);
+  end.setHours(0, 0, 0, 0);
+  while (cursor <= end) {
+    const k = dateKey(cursor);
+    result.push(store[k] ? ensureFields(store[k]) : emptyStats(k));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
 }
 
 export function getStreak(): number {

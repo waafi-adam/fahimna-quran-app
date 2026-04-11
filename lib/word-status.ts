@@ -1,6 +1,7 @@
 import 'expo-sqlite/localStorage/install';
 import type { Word, WordStatus, PropagationMode } from '@/types/quran';
 import { getRootById, getLemmaById, isVerseMarker } from '@/lib/quran-data';
+import { recordPromoted, recordMastered } from '@/lib/review-store';
 
 const NUM_TO_STATUS: WordStatus[] = ['new', 'learning', 'known'];
 const STATUS_TO_NUM: Record<WordStatus, number> = { new: 0, learning: 1, known: 2 };
@@ -57,14 +58,22 @@ export function setWordStatus(
   const num = STATUS_TO_NUM[status];
   const store = getStore();
   let updated = 0;
+  let promotedDelta = 0;
+  let masteredDelta = 0;
 
   const setKey = (key: string) => {
+    const prev = store[key] ?? 0;
     if (num === 0) {
       delete store[key];
     } else {
       store[key] = num;
     }
     updated++;
+    // Forward transitions only
+    if (num > prev) {
+      if (prev === 0 && num === 1) promotedDelta++;
+      else if (num === 2) masteredDelta++; // covers new→known and learning→known
+    }
   };
 
   // Fallback chain: root → lemma → exact
@@ -93,6 +102,8 @@ export function setWordStatus(
   if (updated > 0) {
     scheduleSave();
     notify();
+    if (promotedDelta > 0) recordPromoted(promotedDelta);
+    if (masteredDelta > 0) recordMastered(masteredDelta);
   }
   return updated;
 }
@@ -126,14 +137,21 @@ export function bulkSetPageWordStatus(
   const store = getStore();
   const toNum = STATUS_TO_NUM[toStatus];
   let updated = 0;
+  let promotedDelta = 0;
+  let masteredDelta = 0;
 
   const setKey = (key: string) => {
+    const prev = store[key] ?? 0;
     if (toNum === 0) {
       delete store[key];
     } else {
       store[key] = toNum;
     }
     updated++;
+    if (toNum > prev) {
+      if (prev === 0 && toNum === 1) promotedDelta++;
+      else if (toNum === 2) masteredDelta++;
+    }
   };
 
   for (const line of page.lines) {
@@ -172,6 +190,8 @@ export function bulkSetPageWordStatus(
   if (updated > 0) {
     scheduleSave();
     notify();
+    if (promotedDelta > 0) recordPromoted(promotedDelta);
+    if (masteredDelta > 0) recordMastered(masteredDelta);
   }
   return updated;
 }
