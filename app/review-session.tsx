@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { getDueAndNewForms, getReviewRecord, setReviewRecord, removeReviewRecord, recordReview } from '@/lib/review-store';
@@ -24,6 +25,7 @@ type CardMode = 'ar-to-en' | 'en-to-ar';
 export default function ReviewSessionScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Build the session deck once
   const deck = useMemo(() => {
@@ -100,7 +102,7 @@ export default function ReviewSessionScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       {/* Progress bar */}
       <View style={{ height: 3, backgroundColor: colors.bgTertiary }}>
         <View style={{ height: 3, backgroundColor: colors.accent, width: `${(index / deck.length) * 100}%` }} />
@@ -123,7 +125,7 @@ export default function ReviewSessionScreen() {
       </View>
 
       {/* Bottom buttons */}
-      <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(insets.bottom, 20) }}>
         {state === 'front' ? (
           <Pressable
             onPress={() => setState('back')}
